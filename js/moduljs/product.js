@@ -10,7 +10,56 @@ $(document).ready(function (e) {
 	// // date time picker
 	// $('#d1,#d2,#d3,#d4,#d5').daterangepicker({
 		 // locale: {format: 'YYYY/MM/DD'}
-    // }); 
+	// }); 
+	
+	// $('#ds1,#ds2').daterangepicker({
+    //     locale: {format: 'YYYY/MM/DD'},
+	// 	singleDatePicker: true,
+	// 	showDropdowns: true,
+	// 	pickDate: false
+	//  });
+
+	$('#tstart').timepicker({
+		timeFormat: 'HH:mm',
+		interval: 60,
+		minTime: '10',
+		maxTime: '6:00pm',
+		defaultTime: '10',
+		startTime: '10:00',
+		dynamic: false,
+		dropdown: true,
+		scrollbar: true
+        });
+
+        $('#tend').timepicker({
+            timeFormat: 'HH:mm',
+            interval: 60,
+            minTime: '3',
+            maxTime: '8:00pm',
+            defaultTime: '12',
+            startTime: '12:00',
+            dynamic: false,
+            dropdown: true,
+            scrollbar: true
+        });
+
+	
+
+	$(document).on('click','#crestrict',function(e)
+	{	
+		if($(this).prop('checked')) {
+			
+			$('#tstart').prop('readonly', false);
+			$('#tend').prop('readonly', false);
+			$('#tqty').prop('readonly', false);
+
+		} else {
+			$('#tstart').prop('readonly', true);
+			$('#tend').prop('readonly', true);
+			$('#tqty').prop('readonly', true);
+		}
+		
+	});
 	
 	load_data();  
 	
@@ -259,25 +308,23 @@ $(document).ready(function (e) {
 	
 		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
 							
-						 for(var i = 0; i < s.length; i++) {
-						  if (s[i][6] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
-						  oTable.fnAddData([
+		for(var i = 0; i < s.length; i++) {
+			if (s[i][6] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+			oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
-										i+1,
+						  i+1,
 '<img src="'+s[i][3]+'" class="img_product" alt="'+s[i][3]+'">',
-										s[i][2],
-										s[i][1],
-										s[i][4],
-										s[i][5],
+						  s[i][2],
+						  s[i][1],
+						  s[i][4],
+						  s[i][5],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
-'<a href="" class="btn btn-success btn-xs text-assembly" id="' +s[i][0]+ '" title="Assembly Status"> <i class="fa fa-wrench"> </i> </a> '+
-'<a href="" class="btn btn-danger btn-xs text-calculator" id="' +s[i][0]+ '" title="Calculator Status"> <i class="fa fa-calculator"> </i> </a> '+
 '<a href="" class="btn btn-default btn-xs text-img" id="'+s[i][0]+'" title="Product Image"> <i class="fa fa-picture-o"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '</div>'
-										    ]);										
-											} // End For 
+							  ]);										
+							  } // End For 
 											
 				},
 				error: function(e){
@@ -325,8 +372,6 @@ $(document).ready(function (e) {
 										s[i][5],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
-'<a href="" class="btn btn-success btn-xs text-assembly" id="' +s[i][0]+ '" title="Assembly Status"> <i class="fa fa-wrench"> </i> </a> '+
-'<a href="" class="btn btn-danger btn-xs text-calculator" id="' +s[i][0]+ '" title="Calculator Status"> <i class="fa fa-calculator"> </i> </a> '+
 '<a href="" class="btn btn-default btn-xs text-img" id="'+s[i][0]+'" title="Product Image"> <i class="fa fa-picture-o"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '</div>'
@@ -354,23 +399,9 @@ $(document).ready(function (e) {
 	  });
 	}
 
-	function combo_color(pid){
+	function restriction(){
 
-		$(document).ready(function (e) {
-
-			$.ajax({
-				type: 'POST',
-				url: sites_color+"/"+pid,
-				data: $(this).serialize(),
-				success: function(data)
-				{
-				   document.getElementById("colorbox").innerHTML = data;
-				}
-			})
-			return false;
-			
-	    });  // end document ready	
-
+		alert("Hello World");
 	}
 	
 	function load_form()

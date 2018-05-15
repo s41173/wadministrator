@@ -39,6 +39,43 @@ class Customer_model extends Custom_Model
         $this->db->order_by('id', 'asc'); 
         return $this->db->get(); 
     }
+    
+    function login($user=null,$pass=null){
+        
+        $this->db->where('email', $user);
+        $this->db->where('password', $pass);
+        $this->db->where('status', 1);
+        $this->db->limit(1);
+        $res = $this->db->get($this->tableName)->num_rows();
+        if ($res > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
+    function get_by_username($username=null){
+        
+        $this->db->select($this->field);
+        $this->db->where('email', $username);
+        $this->db->where('deleted', $this->deleted);
+        return $this->db->get($this->tableName);
+    }
+    
+    function cek_user($username){
+        
+        $this->db->select($this->field);
+        $this->db->where('email', $username);
+        $this->db->where('deleted', $this->deleted);
+        $res = $this->db->get($this->tableName)->num_rows();
+        if ($res > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
+    function valid_customer($email,$phone1){
+        
+        $this->db->select($this->field);
+        $this->db->where('deleted', NULL);
+        $this->db->where('email', $email);
+        $this->db->or_where('phone1', $phone1); 
+        $val = $this->db->get($this->tableName)->num_rows();
+        if ($val > 0){ return FALSE; }else{ return TRUE; }
+    }
 
 }
 

@@ -10,10 +10,12 @@
 
 <!-- Date time picker -->
  <script type="text/javascript" src="http://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+ <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
  
  <!-- Include Date Range Picker -->
 <script type="text/javascript" src="http://cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
 <link rel="stylesheet" type="text/css" href="http://cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+<link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>css/datetimepicker/bootstrap-datetimepicker.min.css" />
 
 
 <style type="text/css">
@@ -25,12 +27,13 @@
 
 <script type="text/javascript">
 
-	var sites_add  = "<?php echo site_url('configuration/add_process/');?>";
-	var sites_edit = "<?php echo site_url('configuration/update_process/');?>";
-	var sites_del  = "<?php echo site_url('configuration/delete/');?>";
-	var sites_get  = "<?php echo site_url('configuration/update/');?>";
+	var sites_add  = "<?php echo site_url('product/add_process/');?>";
+	var sites_edit = "<?php echo site_url('product/update_process/');?>";
+	var sites_del  = "<?php echo site_url('product/delete/');?>";
+	var sites_get  = "<?php echo site_url('product/update/');?>";
 	var source = "<?php echo $source;?>";
     var url  = "<?php echo $graph;?>";
+    
 	
 </script>
 
@@ -94,10 +97,10 @@
       </div>
       
       <div class="form-group">
-        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Model </label>
+        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Supplier </label>
         <div class="col-md-3 col-sm-6 col-xs-12">
         <?php $js = "class='form-control' id='cmodel' tabindex='-1' style='min-width:150px;' "; 
-	    echo form_dropdown('cmodel', $model, isset($default['model']) ? $default['model'] : '', $js); ?>
+	    echo form_dropdown('csupplier', $supplier, isset($default['supplier']) ? $default['supplier'] : '', $js); ?>
         </div>
       </div>
             
@@ -109,76 +112,50 @@
         </div>
       </div>
         
-      <div class="form-group">
-                    <label class="control-label col-md-3 col-sm-3 col-xs-12"> Color </label>
-                    <div class="col-md-4 col-sm-3 col-xs-12">
-       <?php $js = "class='select2_multiple form-control' id='ccolor' multiple='multiple' tabindex='-1' style='width:100%;' "; 
-       echo form_dropdown('ccolor[]', $color, $array, $js); ?>              
-                    </div>
-      </div>
-        
       <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Flat-Price </label>  
-          <div class="col-md-6 col-sm-12 col-xs-12 form-group">
-              <?php $js = "class='flat'"; echo form_checkbox('cflat', 1, set_value('cflat', isset($default['flat']) ? $default['flat'] : 'FALSE'), $js); ?> 
-          </div>
-      </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Accessories </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-              <input type="number" name="tbone" class="form-control" style="width:80px;" value="<?php echo isset($default['bone']) ? $default['bone'] : '' ?>">
-          </div>
-      </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Sash - Active Sash </label>  
+          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Modal - Price </label>  
           <div class="col-md-1 col-sm-12 col-xs-12 form-group">
             <table>
                 <tr> 
-                    <td> <input type="number" name="tsash" class="form-control" style="width:80px;" value="<?php echo isset($default['sash']) ? $default['sash'] : '' ?>">
+                    <td> <input type="number" name="tmodal" class="form-control" style="width:120px;" value="<?php echo isset($default['modal']) ? $default['modal'] : '' ?>">
                     </td> 
-                    <td> <input type="number" name="tactivesash" class="form-control" style="width:80px;" value="<?php echo isset($default['activesash']) ? $default['activesash'] : '' ?>">
+                    <td> <input type="number" name="tprice" class="form-control" style="width:120px;" value="<?php echo isset($default['price']) ? $default['price'] : '' ?>">
                     </td> 
                 </tr>
             </table>
           </div>
       </div>
-        
+       
       <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Top Fixed Glass </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-              <input type="number" name="tkacamati" class="form-control" style="width:80px;" value="<?php echo isset($default['fixedglass']) ? $default['fixedglass'] : '' ?>">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12"> <br> Restricted Stock (Qty) </label>  
+          <div class="col-md-6 col-sm-12 col-xs-12 form-group">
+             
+            <table>
+                <tr> 
+                    <td> <?php $js = "class='' id='crestrict'"; echo form_checkbox('crestrict', 1, set_value('crestrict', isset($default['restricted']) ? $default['restricted'] : 'FALSE'), $js); ?>
+                    </td> 
+                    <td> <input type="number" name="tqty" id="tqty" class="form-control" maxlength="3" readonly style="width:70px; margin-left:20px;" value="<?php echo isset($default['qty']) ? $default['qty'] : '' ?>">
+                    </td> 
+                    
+                    <td> 
+<input type="text" title="Article Date" class="timepicker text-center form-control" id="tstart" readonly name="tstart" style=" margin-left:20px; width:120px;" value="<?php echo isset($default['start']) ? $default['start'] : '' ?>" /> 
+<input type="text" title="Article Date" class="timepicker text-center form-control" id="tend" name="tend" readonly style=" margin-left:20px; width:120px;" value="<?php echo isset($default['end']) ? $default['end'] : '' ?>" /> 
+                    </td> 
+                </tr>
+            </table>             
+               
           </div>
       </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Bottom Fixed Glass </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-              <input type="number" name="tkacamatibawah" class="form-control" style="width:80px;" value="<?php echo isset($default['fixedglassbottom']) ? $default['fixedglassbottom'] : '' ?>">
-          </div>
+      
+       <div class="form-group">
+      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Upload Type </label>
+      <div class="col-md-6 col-sm-6 col-xs-12">
+         <select name="curl" id="curl" class="form-control" style="width:150px;"> 
+<option value="UPLOAD"<?php echo set_select('ctype', 'UPLOAD', isset($default['url_type']) && $default['url_type'] == 'UPLOAD' ? TRUE : FALSE); ?>> UPLOAD </option>  
+<option value="URL"<?php echo set_select('ctype', 'URL', isset($default['url_type']) && $default['url_type'] == 'URL' ? TRUE : FALSE); ?>> URL </option>  
+        </select>
       </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Sash Bone </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-              <input type="text" name="ttulangdaun" class="form-control" style="width:80px;" value="<?php echo isset($default['tulangdaun']) ? $default['tulangdaun'] : '0' ?>">
-          </div>
-      </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Panel </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-<input type="text" name="tpanel" class="form-control" style="width:80px;" value="<?php echo isset($default['panel']) ? $default['panel'] : '0' ?>">
-          </div>
-      </div>
-        
-      <div class="form-group">  
-          <label class="control-label col-md-3 col-sm-3 col-xs-12"> Weight - Unit m<sup>3</sup> </label>  
-          <div class="col-md-1 col-sm-12 col-xs-12 form-group">
-<input type="text" name="tweight" class="form-control" style="width:80px;" value="<?php echo isset($default['weight']) ? $default['weight'] : '0' ?>">
-          </div>
-      </div>
+      </div>  
       
       <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Image </label>
@@ -248,4 +225,4 @@
     </script>
     <!-- /jQuery Smart Wizard -->
     
-    
+   <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script> 

@@ -9,23 +9,308 @@ class Customer extends MX_Controller
         $this->load->model('Customer_model', '', TRUE);
 
         $this->properti = $this->property->get();
-        $this->acl->otentikasi();
+//        $this->acl->otentikasi();
 
         $this->modul = $this->components->get(strtolower(get_class($this)));
         $this->title = strtolower(get_class($this));
         $this->role = new Role_lib();
         $this->city = new City_lib();
         $this->disctrict = new District_lib();
+        $this->login = new Customer_login_lib();
+        
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
+        
     }
 
     private $properti, $modul, $title, $customer, $city, $disctrict;
-    private $role;
+    private $role, $login;
 
     function index()
     {
        $this->get_last(); 
     }
-     
+    
+    function get_pass(){ echo $this->random_password(); }
+    
+    function random_password() 
+    {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+        $password = array(); 
+        $alpha_length = strlen($alphabet) - 1; 
+        for ($i = 0; $i < 8; $i++) 
+        {
+            $n = rand(0, $alpha_length);
+            $password[] = $alphabet[$n];
+        }
+        return implode($password); 
+    }
+    
+        // ------ json login -------------------
+    function login(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['username'];
+        $pass = $datas['password'];
+        
+        $status = true;
+        $error = null;
+        $custid = null;
+        $logid = null;
+        
+        if ($user != null && $pass != null){
+            
+            $res = $this->Customer_model->login($user,$pass);
+            if ($res == FALSE){ $status = false; $error = 'Invalid Credential..!'; }
+            else{
+                
+                $logid = $this->random_password();
+                $res = $this->Customer_model->get_by_username($user)->row(); 
+                $userid = $res->id;
+                $this->login->add($userid, $logid);
+            }
+            
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error, 'user' => $datas['username'], 'userid' => $userid, 'log' => $logid); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    function forgot(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['username'];
+        
+        $status = true;
+        $error = null;
+//        $user = 'info@dswip.com';
+        
+        if ($user != null){
+            
+            $res = $this->Customer_model->cek_user($user);
+            if ($res == TRUE){ 
+                $val = $this->Customer_model->get_by_username($user)->row();
+//                if ($this->send_confirmation_email($val->id) == TRUE){ $status = true; $error = "Password has been sent to your email."; }else{ $status = false; $error = 'Email Not Sent..!'; }
+                $status = TRUE; $error = "Password has been sent to your email";
+            }else{ $status = false; $error = 'Invalid Customer Credential..!'; }
+            
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error, 'user' => $datas['username']); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    function otentikasi(){
+       
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['userid'];
+        $log = $datas['log'];
+        
+        $status = true;
+        $error = null;
+        
+        if ( isset($datas['userid']) && isset($datas['log']) ){
+           if ( $this->login->valid($user, $log) == FALSE ){ $status = false; $error = "user already login..!!"; }      
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    // change password
+    
+    function change_password(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['username'];
+        $old = $datas['old_password'];
+        $new = $datas['new_password'];
+        
+        $status = TRUE;
+        $error = null;
+        
+        if ($user != null && $old != null && $new != null){
+            
+            $res = $this->Customer_model->login($user,$old);
+            if ($res == TRUE){ 
+                
+                if ($new == $old){ $status = FALSE; $error = "Password sudah pernah digunakan.";}else{
+                    
+                    $result = $this->Customer_model->get_by_username($user)->row();
+                    $customer = array('password' => $new);
+                    $this->Customer_model->update($result->id, $customer);
+                    $error = 'Password Berhasil Diubah';
+                }
+            }else{ $status = FALSE; $error = 'Akun tidak ditemukan..!'; }
+            
+        }else{ $status = FALSE; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error, 'user' => $datas['username']); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+        
+    }
+    
+    function detail(){
+       
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['userid'];
+        
+        $status = true;
+        $error = null;
+        
+        if ( isset($datas['userid']) ){
+            
+        $res = $this->Agent_model->get_by_id($user)->row(); 
+        $output[] = array ("id" => $res->id, "code" => strtoupper($res->code), "name" => $res->name,
+                           "type" => $res->type, "address" => $res->address, "phone" => $res->phone1.' / '.$res->phone2,
+                           "fax" => $res->fax, "email" => $res->email, "state" => $res->state, "statename" => $this->disctrict->get_province($res->state),
+                           "city" => $res->city, "cityname" => $this->city->get_name($res->city),
+                           "region" => $res->region, "regionname" => $this->disctrict->get_name($res->region), 
+                           "zip" => $res->zip, "group" => $res->groups,
+                           "image" => base_url().'images/customer/'.$res->image);
+            
+           
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $stts = array('status' => $status, 'error' => $error); 
+
+        $response['content'] = $output;
+        $response['status']  = $stts;
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+    }
+    
+    function register(){
+        
+        $datax = (array)json_decode(file_get_contents('php://input')); 
+        if ($this->Customer_model->valid_customer($datax['email'], $datax['phone']) == TRUE){
+            
+            $customer = array('first_name' => strtolower($datax['name']), 
+                          'phone1' => $datax['phone'],
+                          'email' => $datax['email'],
+                          'password' => $datax['password'],
+                          'joined' => date('Y-m-d H:i:s'), 'status' => 1,
+                          'created' => date('Y-m-d H:i:s'));
+
+            $this->Customer_model->add($customer);
+            $response = array('status' => true, 'error' => 'Selamat Datang '.$datax['name']); 
+            // kirim welcome message by email
+        }else{
+            $response = array('status' => false, 'error' => 'Registrasi Gagal, Email atau No Telepon sudah terdaftar..!'); 
+        }
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+        
+    }
+    
+    function edit_customer(){
+        
+        $datax = (array)json_decode(file_get_contents('php://input')); 
+            
+        $customer = array('first_name' => strtolower($datax['fname']), 
+                      'last_name' => strtolower($datax['lname']), 'customer_id' => $datax['customer'],
+                      'type' => $datax['type'], 'address' => $datax['address'],
+                      'shipping_address' => $datax['ship_address'], 'phone1' => $datax['phone1'], 'phone2' => $datax['phone2'],
+                      'email' => $datax['email'], 'region' => $datax['region'],
+                      'city' => $datax['city'], 'state' => $this->city->get_province_based_city($datax['city']),
+                      'zip' => $datax['zip']);
+
+        $this->Customer_model->update($customer,$datax['id']);
+        $response = array('status' => true, 'error' => 'Data Pelanggan Berhasil Diubah'); 
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+        
+    }
+    
+    private function send_confirmation_sms($pid){
+       
+        $customer = $this->Customer_model->get_by_id($pid)->row();
+        $mess = "Selamat datang di wamenak.com ".ucfirst($customer->fname)." Mohon cek email anda untuk informasi lebih lanjut. Terima Kasih.";
+        return $this->sms->send($customer->phone1, $mess);
+    }
+    
+    private function send_confirmation_email($pid)
+    {   
+        // property display
+       $data['p_logo'] = $this->properti['logo'];
+       $data['p_name'] = $this->properti['name'];
+       $data['p_site_name'] = $this->properti['sitename'];
+       $data['p_address'] = $this->properti['address'];
+       $data['p_zip'] = $this->properti['zip'];
+       $data['p_city'] = $this->properti['city'];
+       $data['p_phone'] = $this->properti['phone1'];
+       $data['p_email'] = $this->properti['email'];
+       
+       $customer = $this->Customer_model->get_by_id($pid)->row();
+
+       $data['name']    = strtoupper($customer->first_name.' '.$customer->last_name);
+       $data['type']    = strtoupper($customer->type);
+       $data['address'] = $customer->address;
+       $data['phone']    = $customer->phone1.' / '.$customer->phone2;
+       $data['email']    = $customer->email;
+       $data['password'] = $customer->password;
+       $data['zip']     = $customer->zip;
+       $data['city']    = $this->city->get_name($customer->city);
+       $data['district'] = $this->disctrict->get_name($customer->region);
+       $data['joined']  = tglin($customer->joined).' / '. timein($customer->joined);
+         
+        // email send
+        $this->load->library('email');
+        $config['charset']  = 'utf-8';
+        $config['wordwrap'] = TRUE;
+        $config['mailtype'] = 'html';
+
+        $this->email->initialize($config);
+        $this->email->from($this->properti['email'], $this->properti['name']);
+        $this->email->to($customer->email);
+        $this->email->cc($this->properti['cc_email']); 
+        
+        $html = $this->load->view('customer_confirmation',$data,true); 
+        $this->email->subject('Customer Confirmation - '.strtoupper($customer->code));
+        $this->email->message($html);
+//        $pdfFilePath = FCPATH."/downloads/".$no.".pdf";
+
+        if (!$this->email->send()){ return false; }else{ return true;  }
+    }
+    
+
+    // ========================== api ==========================================
+    
     public function getdatatable($search=null,$cat='null',$publish='null')
     {
         if(!$search){ $result = $this->Customer_model->get_last($this->modul['limit'])->result(); }
@@ -514,6 +799,7 @@ class Customer extends MX_Controller
         $this->form_validation->set_rules('ccity', 'City', 'required');
         $this->form_validation->set_rules('cdistrict', 'District', 'required');
         $this->form_validation->set_rules('tzip', 'Zip', '');
+        $this->form_validation->set_rules('tpass', 'Password', 'required');
             
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -535,10 +821,10 @@ class Customer extends MX_Controller
                 $data['error'] = $this->upload->display_errors();
 
                 $customer = array('first_name' => strtolower($this->input->post('tfname')), 
-                              'last_name' => strtolower($this->input->post('tlname')),
+                              'last_name' => strtolower($this->input->post('tlname')), 'password' => $this->input->post('tpass'),
                               'type' => $this->input->post('ctype'), 'address' => $this->input->post('taddress'),
                               'shipping_address' => $this->input->post('tshipping'), 'phone1' => $this->input->post('tphone1'), 'phone2' => $this->input->post('tphone2'),
-                              'email' => $this->input->post('temail'), 'password' => 'password', 
+                              'email' => $this->input->post('temail'),
                               'website' => $this->input->post('twebsite'), 'region' => $this->input->post('cdistrict'),
                               'city' => $this->input->post('ccity'), 'state' => $this->city->get_province_based_city($this->input->post('ccity')),
                               'zip' => $this->input->post('tzip'));
@@ -549,10 +835,10 @@ class Customer extends MX_Controller
                 $info = $this->upload->data();
 
                 $customer = array('first_name' => strtolower($this->input->post('tfname')), 
-                              'last_name' => strtolower($this->input->post('tlname')),
+                              'last_name' => strtolower($this->input->post('tlname')), 'password' => $this->input->post('tpass'),
                               'type' => $this->input->post('ctype'), 'address' => $this->input->post('taddress'),
                               'shipping_address' => $this->input->post('tshipping'), 'phone1' => $this->input->post('tphone1'), 'phone2' => $this->input->post('tphone2'),
-                              'email' => $this->input->post('temail'), 'password' => 'password', 
+                              'email' => $this->input->post('temail'),
                               'website' => $this->input->post('twebsite'), 'region' => $this->input->post('cdistrict'),
                               'city' => $this->input->post('ccity'), 'state' => $this->city->get_province_based_city($this->input->post('ccity')),
                               'zip' => $this->input->post('tzip'), 'image' => $info['file_name']);

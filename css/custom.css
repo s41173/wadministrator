@@ -181,7 +181,7 @@ body.nav-md .container.body .right_col {
 .nav_title {
   width: 230px;
   float: left;
-  background: #000;
+  background: #f57c00;
   border-radius: 0;
   height: 57px;
 }
@@ -551,10 +551,10 @@ li.current-page {
   color: #000;
   text-shadow: rgba(0, 0, 0, 0.25) 0 -1px 0;
   background: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #5b6479), color-stop(100%, #4c5566)), #686e78;
-  background: -webkit-linear-gradient(#838384, #838384), #000;
-  background: -moz-linear-gradient(#838384, #838384), #000;
-  background: -o-linear-gradient(#838384, #838384), #000;
-  background: linear-gradient(#838384, #838384), #000;
+  background: -webkit-linear-gradient(#f57c00, #f57c00), #000;
+  background: -moz-linear-gradient(#f57c00, #f57c00), #000;
+  background: -o-linear-gradient(#f57c00, #f57c00), #000;
+  background: linear-gradient(#f57c00, #f57c00), #000;
   -webkit-box-shadow: rgba(0, 0, 0, 0.25) 0 1px 0, inset rgba(255, 255, 255, 0.16) 0 1px 0;
   -moz-box-shadow: rgba(0, 0, 0, 0.25) 0 1px 0, inset rgba(255, 255, 255, 0.16) 0 1px 0;
   box-shadow: rgba(0, 0, 0, 0.25) 0 1px 0, inset rgba(255, 255, 255, 0.16) 0 1px 0;
@@ -1508,7 +1508,7 @@ span.right {
   background: #172D44;
 }
 .sidebar-footer a:hover {
-  background: #425567;
+  background: #f57c00;
 }
 .tile_count {
   margin-bottom: 20px;

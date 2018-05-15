@@ -10,10 +10,12 @@
 
 <!-- Date time picker -->
  <script type="text/javascript" src="http://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+ <script type="text/javascript" src="<?php echo base_url(); ?>css/datetimepicker/bootstrap-datetimepicker.min.js"></script>
  
  <!-- Include Date Range Picker -->
 <script type="text/javascript" src="http://cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
 <link rel="stylesheet" type="text/css" href="http://cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+<link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>css/datetimepicker/bootstrap-datetimepicker.min.css" />
 
 
 <style type="text/css">

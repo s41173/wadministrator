@@ -30,6 +30,7 @@
 	var sites_del  = "<?php echo site_url('customer/delete/');?>";
 	var sites_get  = "<?php echo site_url('customer/update/');?>";
     var sites_ajax  = "<?php echo site_url('customer/');?>";
+    var sites_primary = "<?php echo site_url('customer/publish/');?>";
 	var source = "<?php echo $source;?>";
 	
 </script>
@@ -114,6 +115,15 @@
         value="<?php echo isset($default['phone2']) ? $default['phone2'] : '' ?>">
         <span class="fa fa-phone form-control-feedback right" aria-hidden="true"></span> 
       </div>
+       
+            <!-- password generator -->
+      <div class="col-md-6 col-sm-6 col-xs-12 form-group has-feedback">
+ <input type="text" class="form-control has-feedback-left" readonly id="tpass" name="tpass" style="width:200px; float:left; margin-right:10px;" value="<?php echo isset($default['password']) ? $default['password'] : '' ?>">
+        
+        <button type="button" id="bgetpass" class="btn btn-default"> GET Password </button>  
+      </div>
+        
+      <div class="clear"></div>
         
       <div class="form-group">
       <label class="control-label col-md-1 col-sm-1 col-xs-12"> Address : </label>

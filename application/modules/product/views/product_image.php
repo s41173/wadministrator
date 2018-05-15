@@ -95,9 +95,8 @@
         <label class="control-label col-md-3 col-sm-3 col-xs-12"> Name </label>
         <div class="col-md-9 col-sm-9 col-xs-12">
           <select class="form-control" name="cname" id="cname">
-            <option value="6"> Sketch </option>
             <option value="1"> Image 1 </option> <option value="2"> Image 2 </option> <option value="3"> Image 3 </option>
-            <option value="4"> Image 4 </option> <option value="5"> Image 5 </option>
+            <option value="4"> Image 4 </option> <option value="5"> Image 5 </option> <option value="6"> Image 6 </option>
           </select>
         </div>
     </div>

@@ -16,6 +16,7 @@
 
 <!-- Date time picker -->
  <script type="text/javascript" src="http://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+ <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
  
  <!-- Include Date Range Picker -->
 <script type="text/javascript" src="http://cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
@@ -80,13 +81,7 @@
                 <?php $js = "class='select2_single form-control' id='ccategory' tabindex='-1' style='min-width:150px;' "; 
 			        echo form_dropdown('ccategory', $category, isset($default['category']) ? $default['category'] : '', $js); ?>
               </div>
-               
-              <div class="form-group">
-                <label> Model : </label>  <br>
-                <?php $js = "class='select2_single form-control' id='cmodel' tabindex='-1' style='min-width:150px;' "; 
-			        echo form_dropdown('cmodel', $model, isset($default['model']) ? $default['model'] : '', $js); ?>
-              </div>
-              
+                             
               <div class="form-group"> <label> Status : </label> <br>
                 <select name="cpublish" id="cpublish" class="select2_single form-control" style="width:150px;">
                    <option value="1"> Publish </option>
@@ -151,21 +146,9 @@
       
       <!-- Modal - Report Form -->
       <div class="modal fade" id="myModal3" role="dialog">
-         <?php $this->load->view('product_report_panel'); ?>    
+         <?php //$this->load->view('product_report_panel'); ?>    
       </div>
       <!-- Modal - Report Form -->
-              
-      <!-- Modal - Import Form -->
-      <div class="modal fade" id="myModal4" role="dialog">
-        <?php $this->load->view('product_assembly'); ?>    
-      </div>
-      <!-- Modal - Import Form -->
-              
-      <!-- Modal - Calculator Form -->
-      <div class="modal fade" id="myModal9" role="dialog">
-        <?php $this->load->view('product_calculator'); ?>    
-      </div>
-      <!-- Modal - Calculator Form -->
       
       <script src="<?php echo base_url(); ?>js/icheck/icheck.min.js"></script>
       
@@ -181,3 +164,6 @@
         <script src="<?php echo base_url(); ?>js/datatables/responsive.bootstrap.min.js"></script>
         <script src="<?php echo base_url(); ?>js/datatables/dataTables.scroller.min.js"></script>
         <script src="<?php echo base_url(); ?>js/datatables/dataTables.tableTools.js"></script>
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script> 

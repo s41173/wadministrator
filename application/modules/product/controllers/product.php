@@ -15,18 +15,12 @@ class Product extends MX_Controller
         $this->title = strtolower(get_class($this));
         $this->role = new Role_lib();
         $this->category = new Categoryproduct_lib();
-        $this->attribute = new Attribute_lib();
-        $this->attribute_product = new Attribute_product_lib();
-        $this->attribute_list = new Attribute_list_lib();
         $this->product = new Product_lib();
-        $this->model = new Model_lib();
-        $this->color = new Color_lib();
-        $this->materiallist = new Material_list_lib();
-        $this->material = new Material_lib();
+        $this->supplier = new Supplier_lib();
     }
 
-    private $properti, $modul, $title, $product, $color, $materiallist, $material;
-    private $role, $category, $model, $attribute, $attribute_product, $attribute_list, $currency;
+    private $properti, $modul, $title, $product, $supplier;
+    private $role, $category, $model, $currency;
 
     function index()
     {
@@ -37,91 +31,6 @@ class Product extends MX_Controller
     }
     
     // ============ ajax ==========================
-    
-    function get_pro_name($pid){
-        echo strtoupper($this->product->get_name($pid)).' | '. $this->model->get_name($this->product->get_model($pid));
-    }
-    
-    function get_glass($type=null){
-        $result = $this->material->combo_glass($type);
-        $js = "class='form-control' id='cglass' tabindex='-1' style='width:100%;' "; 
-        echo form_dropdown('cglass', $result, isset($default['glass']) ? $default['glass'] : '', $js);
-    }
-    
-    function get_color($pid=null){
-        $res = $this->Product_model->get_by_id($pid)->row();
-        $color = explode(',', $res->color);
-        $data=null;
-        
-        for($i=0; $i<count($color); $i++){ $data['options'][$color[$i]] = strtoupper($this->color->get_name($color[$i]));}
-        $js = "class='form-control' id='ccolor' tabindex='-1' style='width:100%;' "; 
-        echo form_dropdown('ccolor', $data, isset($default['color']) ? $default['color'] : '', $js);
-    }
-    
-    function calculator(){
-       
-        $pid = $this->input->post('tid');
-        $width = $this->input->post('twidth');
-        $height = $this->input->post('theight');
-        $heightkm = $this->input->post('theightkm');
-        $heightkm1 = $this->input->post('theightkm1');
-        $color = setnull($this->input->post('ccolor'));
-        $type = $this->input->post('ctype');
-        $kusen = $this->input->post('ckusen');
-        $glass = $this->input->post('cglass');
-        
-        $material = new Material_lib();
-        $formula = new Formula_lib();
-        $assembly = new Assembly_lib();
-        
-        $matlist = $assembly->get_details($pid)->result();
-        $total = 0;
-        $i=1;
-        $datax = "";
-        
-        foreach ($matlist as $res){
-            
-            $nama = $this->materiallist->get_name($res->material);
-            $harga = $material->get_price($pid, $res->material, $color, $type, $glass);
-            $size = $formula->calculate($this->model->get_name($this->product->get_model($pid)),$nama, $width, $height, $pid, $heightkm, $heightkm1, $kusen);
-            $brutto = round(floatval($size*$harga));
-            
-            $total = $total+$brutto;
-            $datax = $datax." <tr> <td>".$i."</td> <td> ".$nama." </td> <td> ".$size." </td> <td> ". idr_format($brutto)." </td> </tr>";
-            $i++;
-//            echo "Nama : ". $nama.'<br> Ukuran : '.$size.'<br> Harga Unit : '.idr_format($harga).'<br> Harga : '. idr_format($brutto).'<hr>'; 
-            
-        }
-        
-        $total = round(floatval(1.1*$total));
-//        echo 'Total : <b> '.idr_format($total).'</b>';
-        echo $datax.'|'.idr_format($total);
-    }
-    
-    function hitung($pid=0,$width=0,$height=0,$heightkm=0,$heightkm1=0,$color=3,$type='DOUBLE',$kusen="KUSEN"){
-        
-        $material = new Material_lib();
-        $formula = new Formula_lib();
-        $assembly = new Assembly_lib();
-        
-        $matlist = $assembly->get_details($pid)->result();
-        $total = 0;
-        $i=1;
-        
-        foreach ($matlist as $res){
-            
-            $nama = $this->materiallist->get_name($res->material);
-            $harga = $material->get_price($pid, $res->material, $color, $type);
-            $size = $formula->calculate($this->model->get_name($this->product->get_model($pid)),$nama, $width, $height, $pid, $heightkm, $heightkm1, $kusen);
-            $brutto = round(floatval($size*$harga));
-            
-            $total = $total+$brutto;
-            echo "Nama : ". $nama.'<br> Ukuran : '.$size.'<br> Harga Unit : '.idr_format($harga).'<br> Harga : '. idr_format($brutto).'<hr>'; 
-        }
-        
-        $total = round(floatval(1.1*$total));
-        echo 'Total : <b> '.idr_format($total).'</b>';
-    }
      
     public function getdatatable($search=null,$cat='null',$model='null',$publish='null')
     {
@@ -134,7 +43,7 @@ class Product extends MX_Controller
          foreach($result as $res)
 	 {   
 	   $output[] = array ($res->id, $res->sku, $this->category->get_name($res->category), base_url().'images/product/'.$res->image,
-                              strtoupper($res->name), $this->model->get_name($res->model), $res->publish
+                              strtoupper($res->name), idr_format($res->price), $res->publish
                              );
 	 } 
          
@@ -144,6 +53,7 @@ class Product extends MX_Controller
          ->set_output(json_encode($output))
          ->_display();
          exit;  
+         
         }
     }
 
@@ -163,9 +73,7 @@ class Product extends MX_Controller
         $data['link'] = array('link_back' => anchor('main/','Back', array('class' => 'btn btn-danger')));
 
         $data['category'] = $this->category->combo();
-        $data['model'] = $this->model->combo();
-        $data['color'] = $this->color->combo();
-        $data['material'] = $this->materiallist->combo();
+        $data['supplier'] = $this->supplier->combo();
         $data['array'] = array('','');
 
         // library HTML table untuk membuat template table class zebra
@@ -175,7 +83,7 @@ class Product extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Image', 'Category', 'SKU', 'Name', 'Series', 'Action');
+        $this->table->set_heading('#','No', 'Image', 'Category', 'SKU', 'Name', 'Price', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url($this->title.'/getdatatable');
@@ -285,8 +193,10 @@ class Product extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tsku', 'SKU', 'required|callback_valid_sku');
         $this->form_validation->set_rules('tname', 'Name', 'required|callback_valid_name');
-        $this->form_validation->set_rules('cmodel', 'Model', 'required');
+        $this->form_validation->set_rules('tmodal', 'Modal Price', 'required|numeric');
+        $this->form_validation->set_rules('tprice', 'Price', 'required|numeric');
         $this->form_validation->set_rules('ccategory', 'Category', 'required');
+        $this->form_validation->set_rules('csupplier', 'Supplier', 'required');
 
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -306,8 +216,9 @@ class Product extends MX_Controller
                 $info['file_name'] = null;
                 $data['error'] = $this->upload->display_errors();
                 $product = array('name' => strtolower($this->input->post('tname')),
-                                 'sku' => $this->input->post('tsku'), 'model' => $this->input->post('cmodel'), 
-                                 'category' => $this->input->post('ccategory'),
+                                 'sku' => $this->input->post('tsku'), 'capital' => $this->input->post('tmodal'), 
+                                 'price' => $this->input->post('tprice'), 
+                                 'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
                                  'image' => null, 'created' => date('Y-m-d H:i:s'));
             }
             else
@@ -315,8 +226,9 @@ class Product extends MX_Controller
                 $info = $this->upload->data();
                 
                 $product = array('name' => strtolower($this->input->post('tname')),
-                                 'sku' => $this->input->post('tsku'), 'model' => $this->input->post('cmodel'), 
-                                 'category' => $this->input->post('ccategory'),
+                                 'sku' => $this->input->post('tsku'), 'capital' => $this->input->post('tmodal'), 
+                                 'price' => $this->input->post('tprice'), 
+                                 'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
                                  'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
             }
 
@@ -402,32 +314,26 @@ class Product extends MX_Controller
 	$data['form_action'] = site_url($this->title.'/update_process');
         $data['link'] = array('link_back' => anchor($this->title,'Back', array('class' => 'btn btn-danger')));
 
-        $data['model'] = $this->model->combo();
         $data['category'] = $this->category->combo();
-        $data['color'] = $this->color->combo();
-        
-        
+        $data['supplier'] = $this->supplier->combo();
         $data['source'] = site_url($this->title.'/getdatatable');
         
         $product = $this->Product_model->get_by_id($uid)->row();
 	$this->session->set_userdata('langid', $product->id);
         
-        $data['array'] = explode(',', $product->color);
         $data['default']['sku'] = $product->sku;
         $data['default']['category'] = $product->category;
+        $data['default']['supplier'] = $product->supplier;
         $data['default']['name'] = $product->name;
-        $data['default']['model'] = $product->model;
+        $data['default']['modal'] = $product->capital;
+        $data['default']['price'] = $product->price;
         $data['default']['description'] = $product->description;
-        $data['default']['flat'] = $product->flat_price;
-        $data['default']['bone'] = $product->bone;
-        $data['default']['sash'] = $product->daun;
-        $data['default']['activesash'] = $product->daunhidup;
-        $data['default']['fixedglass'] = $product->kacamati;
-        $data['default']['fixedglassbottom'] = $product->kacamati_bawah;
-        $data['default']['tulangdaun'] = $product->tulang_daun;
-        $data['default']['panel']      = $product->panel;
-        $data['default']['weight']     = $product->weight;
-        $data['default']['image']      = base_url().'images/product/'.$product->image;
+        $data['default']['restricted']  = $product->restricted;
+        $data['default']['qty']   = $product->qty;
+        $data['default']['start'] = $product->start;
+        $data['default']['end'] = $product->end;
+        $data['default']['url_type'] = $product->url_type;
+        $data['default']['image'] = base_url().'images/product/'.$product->image;
          
         $this->load->helper('editor');
         editor();
@@ -435,15 +341,21 @@ class Product extends MX_Controller
     }
     
     function image_gallery($pid=null)
-    {        
+    {
+        $result = $this->Product_model->get_by_id($pid)->row();
+        if ($result->url_type == 'URL'){ 
+            $action = site_url($this->title.'/add_image_url/'.$pid);  $view = 'product_image_url';
+        }else{
+            $action = site_url($this->title.'/add_image/'.$pid);  $view = 'product_image';
+        }
+        
         $data['title'] = $this->properti['name'].' | Administrator  '.ucwords($this->modul['title']);
         $data['h2title'] = 'Edit '.$this->modul['title'];
         $data['main_view'] = 'article_form';
-	$data['form_action'] = site_url($this->title.'/add_image/'.$pid);
+	$data['form_action'] = $action;
         $data['link'] = array('link_back' => anchor($this->title,'Back', array('class' => 'btn btn-danger')));
 
-        $result = $this->Product_model->get_by_id($pid)->row();
-        
+
         // library HTML table untuk membuat template table class zebra
         $tmpl = array('table_open' => '<table id="" class="table table-striped table-bordered">');
 
@@ -464,8 +376,7 @@ class Product extends MX_Controller
                 case 6:$url = $result->url6; break;
             }
             
-            if ($url){ $url = base_url().'images/product/'.$url; }
-            
+            if ($result->url_type == 'URL'){ $url = $url;}else{ $url = base_url().'images/product/'.$url;}
             $image_properties = array('src' => $url, 'alt' => 'Image'.$i, 'class' => 'img_product', 'width' => '60', 'title' => 'Image'.$i,);
             $this->table->add_row
             (
@@ -475,7 +386,7 @@ class Product extends MX_Controller
 
         $data['table'] = $this->table->generate();
         
-        $this->load->view('product_image', $data);
+        $this->load->view($view, $data);
     }
     
     function valid_image($val)
@@ -485,6 +396,37 @@ class Product extends MX_Controller
             if (!$this->input->post('turl')){ $this->form_validation->set_message('valid_image','Image Url Required..!'); return FALSE; }
             else { return TRUE; }            
         }
+    }
+    
+    function add_image_url($pid)
+    {
+        if ($this->acl->otentikasi2($this->title) == TRUE){
+
+            $data['title'] = $this->properti['name'].' | Administrator  '.ucwords('Product Manager');
+            $data['h2title'] = 'Product Manager';
+            $data['link'] = array('link_back' => anchor('admin/','<span>back</span>', array('class' => 'back')));
+
+            // Form validation
+            
+            $this->form_validation->set_rules('cname', 'Image Attribute', 'required|');
+            $this->form_validation->set_rules('turl', 'Image Url', 'required');
+
+            if ($this->form_validation->run($this) == TRUE)
+            {  
+                $result = $this->Product_model->get_by_id($pid)->row();
+                $attr = array('url'.$this->input->post('cname') => $this->input->post('turl')); 
+                $this->Product_model->update($pid, $attr);
+                $this->session->set_flashdata('message', "One $this->title data successfully saved!");
+                
+                echo 'true|Data successfully saved..!'; 
+            }
+            else
+            {
+    //            echo validation_errors();
+                echo 'error|'.validation_errors();
+            }
+        }
+        else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
     }
     
     function add_image($pid)
@@ -546,6 +488,37 @@ class Product extends MX_Controller
             }
         }
         else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
+    }
+    
+    function valid_time(){
+        
+        $restrict = $this->input->post('crestrict');
+        if($restrict == 1)
+        {
+          $start = strtotime($this->input->post('tstart'));
+          $end = strtotime($this->input->post('tend'));
+          
+          if ($start > $end){
+             $this->form_validation->set_message('valid_time', "Invalid Time.");
+             return FALSE;
+          }else{ return TRUE; }  
+
+        }
+        else{ return TRUE; }
+    }
+    
+    function valid_qty($val)
+    {
+        $restrict = $this->input->post('crestrict');
+        if($restrict == 1)
+        {
+          if ($val == 0 || $val == ""){
+             $this->form_validation->set_message('valid_qty', "Qty required.");
+             return FALSE;
+          }else{ return TRUE; }  
+
+        }
+        else{ return TRUE; }
     }
 
     function valid_role($val)
@@ -637,19 +610,14 @@ class Product extends MX_Controller
         {
             $this->form_validation->set_rules('tsku', 'SKU', 'required|callback_validating_sku');
             $this->form_validation->set_rules('ccategory', 'Category', 'required');
+            $this->form_validation->set_rules('csupplier', 'Supplier', 'required');
             $this->form_validation->set_rules('tname', 'Product Name', 'required|callback_validating_name');
-            $this->form_validation->set_rules('cmodel', 'Product Model', 'required');
+            $this->form_validation->set_rules('tmodal', 'Modal', 'required|numeric');
+            $this->form_validation->set_rules('tprice', 'Price', 'required|numeric');
+            $this->form_validation->set_rules('tqty', 'Qty', 'required|numeric|callback_valid_qty');
+            $this->form_validation->set_rules('tstart', 'Start Time', 'required|callback_valid_time');
+            $this->form_validation->set_rules('tend', 'End Time', 'required');
             $this->form_validation->set_rules('tdesc', 'Description', '');
-            $this->form_validation->set_rules('ccolor', 'Color', '');
-            $this->form_validation->set_rules('cflat', 'Color', '');
-            $this->form_validation->set_rules('tbone', 'Bone', 'required|numeric');
-            $this->form_validation->set_rules('tsash', 'Sash', 'required|numeric');
-            $this->form_validation->set_rules('tactivesash', 'Active Sash', 'required|numeric');
-            $this->form_validation->set_rules('tkacamati', 'Fixed Glass', 'required|numeric');
-            $this->form_validation->set_rules('tkacamatibawah', 'Fixed Glass Bottom', 'required|numeric');
-            $this->form_validation->set_rules('ttulangdaun', 'Sash Bone', 'required|numeric');
-            $this->form_validation->set_rules('tpanel', 'Panel', 'required|numeric');
-            $this->form_validation->set_rules('tweight', 'Weight', 'required|numeric');
             
             if ($this->form_validation->run($this) == TRUE)
             {
@@ -664,31 +632,29 @@ class Product extends MX_Controller
                 $config['remove_spaces'] = TRUE;
 
                 $this->load->library('upload', $config);
+                
+                if ($this->input->post('crestrict') == 1){ $start = $this->input->post('tstart'); $end = $this->input->post('tend'); $qty = $this->input->post('tqty');
+                }else{ $start = null; $end = null; $qty = 0; }
 
                 if ( !$this->upload->do_upload("userfile")) // if upload failure
                 {
                     $info['file_name'] = null;
                     $data['error'] = $this->upload->display_errors();
-                    $product = array('name' => strtolower($this->input->post('tname')), 'kacamati' => $this->input->post('tkacamati'),
-                                     'kacamati_bawah' => $this->input->post('tkacamatibawah'),
-                                     'daun' => $this->input->post('tsash'), 'daunhidup' => $this->input->post('tactivesash'),
-                                     'tulang_daun' => $this->input->post('ttulangdaun'), 'panel' => $this->input->post('tpanel'),
-                                     'sku' => $this->input->post('tsku'), 'model' => $this->input->post('cmodel'), 'bone' => $this->input->post('tbone'), 
-                                     'color' => $this->split_array($this->input->post('ccolor')), 'flat_price' => $this->input->post('cflat'), 'weight' => $this->input->post('tweight'),
-                                     'category' => $this->input->post('ccategory'), 'description' => $this->input->post('tdesc'));
+                    $product = array('name' => strtolower($this->input->post('tname')), 'url_type' => $this->input->post('curl'),
+                                     'sku' => $this->input->post('tsku'), 'start' => $start, 'end' => $end, 'qty' => $qty, 
+                                     'restricted' => $this->input->post('crestrict'), 'capital' => $this->input->post('tmodal'), 'price' => $this->input->post('tprice'),
+                                     'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
+                                     'description' => $this->input->post('tdesc'));
                 }
                 else
                 {
                     $info = $this->upload->data();
 
-                    $product = array('name' => strtolower($this->input->post('tname')), 'kacamati' => $this->input->post('tkacamati'),
-                                     'kacamati_bawah' => $this->input->post('tkacamatibawah'),
-                                     'daun' => $this->input->post('tsash'), 'daunhidup' => $this->input->post('tactivesash'),
-                                     'tulang_daun' => $this->input->post('ttulangdaun'), 'panel' => $this->input->post('tpanel'),
-                                     'color' => $this->split_array($this->input->post('ccolor')),
-                                     'sku' => $this->input->post('tsku'), 'model' => $this->input->post('cmodel'), 'weight' => $this->input->post('tweight'),
-                                     'flat_price' => $this->input->post('cflat'), 'bone' => $this->input->post('tbone'), 
-                                     'category' => $this->input->post('ccategory'), 'description' => $this->input->post('tdesc'),
+                    $product = array('name' => strtolower($this->input->post('tname')), 'url_type' => $this->input->post('curl'),
+                                     'sku' => $this->input->post('tsku'), 'start' => $start, 'end' => $end, 'qty' => $qty, 
+                                     'restricted' => $this->input->post('crestrict'), 'capital' => $this->input->post('tmodal'), 'price' => $this->input->post('tprice'),
+                                     'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
+                                     'description' => $this->input->post('tdesc'),
                                      'image' => $info['file_name']);
                 }
                 

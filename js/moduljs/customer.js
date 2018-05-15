@@ -14,8 +14,6 @@ $(document).ready(function (e) {
 	
 	load_data();  
 	
-	// batas dtatable
-	
 	// fungsi jquery update
 	$(document).on('click','.text-primary',function(e)
 	{	
@@ -27,8 +25,7 @@ $(document).ready(function (e) {
 		window.location.href = url;
 		
 	});
-	
-	
+
 		// fungsi ajax combo
 	$(document).on('change','#ccity,#ccity_update',function(e)
 	{	
@@ -45,6 +42,26 @@ $(document).ready(function (e) {
 			success: function(result) {
 			$('#cdistrict_update').hide();
 			$(".select_box").html(result);
+			}
+		})
+		return false;	
+	});
+
+	// publish status
+	$(document).on('click','#bgetpass',function(e)
+	{	
+		e.preventDefault();
+		var element = $(this);
+		var url = sites_ajax+'/get_pass';
+		$(".error").fadeOut();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			cache: false,
+			headers: { "cache-control": "no-cache" },
+			success: function(result) {
+				$("#tpass").val(result);
 			}
 		})
 		return false;	

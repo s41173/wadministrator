@@ -13,9 +13,9 @@ class Product_model extends Custom_Model
         $this->tableName = 'product';
     }
     
-    protected $field = array('id', 'sku', 'category', 'assembly', 'name', 'model', 'description', 'daun', 'daunhidup', 'kacamati', 'kacamati_bawah',
-                             'tulang_daun', 'panel', 'image', 'color', 'url1', 'url2', 'url3', 'url4', 'url5', 'url6', 'flat_price', 'bone', 'publish', 
-                             'weight', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'sku', 'category', 'name', 'description', 'image', 'url_type', 'url1', 'url2', 'url3',
+                             'url4', 'url5', 'url6', 'capital', 'price', 'supplier', 'restricted', 'qty', 'start', 'end', 'publish', 
+                             'created', 'updated', 'deleted');
     protected $com;
     
     function get_last($limit, $offset=null)
