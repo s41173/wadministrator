@@ -28,19 +28,20 @@ class Discount extends MX_Controller
        $this->get_last();
     }
     
+    // api calculate
     function calculate(){
         
         $datas = (array)json_decode(file_get_contents('php://input'));
         
         $amount = $datas['amount'];
-        $agent = $datas['agent_id'];
+        $payment = $datas['payment'];
         $date = $datas['date'];
         
         $error = null;
         $result = 0;
         
-        if ($date != null && $agent != null && $amount != null){ 
-           $result = $this->model->get_discount($amount,$agent,$date);
+        if ($date != null && $payment != null && $amount != null){ 
+           $result = $this->model->get_discount($amount,$date,$payment);
         }else{ $error = "Invalid JSON Format"; }
                 
         $response = array('result' => $result, 'error' => $error); 
@@ -63,7 +64,7 @@ class Discount extends MX_Controller
 	foreach($result as $res)
 	{
 	   $output[] = array ($res->id, $res->name, tglin($res->start), tglin($res->end), $res->type,  idr_format($res->minimum),
-                              $res->percentage, $res->agent, $res->status);
+                              $res->percentage, $res->payment_type, $res->status);
 	}
             $this->output
             ->set_status_header(200)
@@ -97,8 +98,7 @@ class Discount extends MX_Controller
         $data['form_action_del'] = site_url($this->title.'/delete_all');
         $data['form_action_report'] = site_url($this->title.'/report_process');
         $data['link'] = array( 'link_back' => anchor('main/','Back', array('class' => 'btn btn-danger')) );
-        
-        $data['agent'] = $this->agent->combo();
+
         $data['array'] = array('','');
         
 	// ---------------------------------------- //
@@ -116,7 +116,7 @@ class Discount extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Name', 'Period', 'Type', 'Minimum Order', '%', 'Action');
+        $this->table->set_heading('#','No', 'Name', 'Period', 'Type', 'Payment Type', 'Minimum Order', '%', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url($this->title.'/getdatatable');
@@ -201,8 +201,8 @@ class Discount extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tname', 'Name', 'required|callback_valid_discount['.$end.']');
         $this->form_validation->set_rules('tdates', 'Period', 'required');
-        $this->form_validation->set_rules('cagent', 'Material', 'required');
         $this->form_validation->set_rules('ctype', 'Type', 'required');
+        $this->form_validation->set_rules('cpaymenttype', 'Payment Type', 'required');
         $this->form_validation->set_rules('tminorder', 'Min Order', 'required|numeric');
         $this->form_validation->set_rules('tpercent', 'Percentage Value', 'required|numeric');
 
@@ -212,9 +212,9 @@ class Discount extends MX_Controller
             $model = array('name' => strtoupper($this->input->post('tname')),
                            'start' => $start, 'end' => $end,
                            'type' => $this->input->post('ctype'),
+                           'payment_type' => $this->input->post('cpaymenttype'),
                            'minimum' => $this->input->post('tminorder'),
                            'percentage' => $this->input->post('tpercent'),
-                           'agent' => split_array($this->input->post('cagent')),
                            'created' => date('Y-m-d H:i:s'));
             
             $this->model->add($model);
@@ -229,7 +229,7 @@ class Discount extends MX_Controller
     {        
         $category = $this->model->get_by_id($uid)->row();
 	$this->session->set_userdata('langid', $category->id);        
-        echo $uid.'|'.$category->name.'|'.$category->start.'|'.$category->end.'|'.$category->type.'|'.$category->minimum.'|'.$category->percentage.'|'.$category->agent.'|'.$category->status;
+        echo $uid.'|'.$category->name.'|'.$category->start.'|'.$category->end.'|'.$category->type.'|'.$category->minimum.'|'.$category->percentage.'|'.$category->payment_type.'|'.$category->status;
     }
 
     public function valid_discount($name,$end)

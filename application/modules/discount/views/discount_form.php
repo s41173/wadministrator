@@ -38,10 +38,12 @@
     </div>
         
      <div class="form-group">
-      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Agent </label>
+      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Payment Type </label>
       <div class="col-md-6 col-sm-6 col-xs-12">
-<?php $js = "class='select2_multiple form-control' id='cagent' multiple='multiple' required tabindex='-1' style='width:100%;' "; 
-	 echo form_dropdown('cagent[]', $agent, $array, $js); ?>
+        <select name="cpaymenttype" id="cpaymenttype" class="form-control" style="width:150px;">
+           <option value="CASH"> CASH </option>
+           <option value="WALLET"> WALLET </option>
+         </select>
       </div>
     </div>
     

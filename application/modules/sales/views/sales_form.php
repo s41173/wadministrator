@@ -50,8 +50,7 @@
               </div>
               <!-- xtitle -->
                 
-                <div class="x_content">
-                    
+                <div class="x_content">     
 <!--
   <div id="errors" class="alert alert-danger alert-dismissible fade in" role="alert"> 
      <?php // $flashmessage = $this->session->flashdata('message'); ?> 

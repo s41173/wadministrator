@@ -28,6 +28,15 @@ class Customer_model extends Custom_Model
         return $this->db->get(); 
     }
     
+    function get()
+    {
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('deleted', $this->deleted);
+        $this->db->order_by('first_name', 'asc'); 
+        return $this->db->get(); 
+    }
+    
     function search($cat=null,$publish=null)
     {   
         $this->db->select($this->field);
@@ -75,6 +84,13 @@ class Customer_model extends Custom_Model
         $this->db->or_where('phone1', $phone1); 
         $val = $this->db->get($this->tableName)->num_rows();
         if ($val > 0){ return FALSE; }else{ return TRUE; }
+    }
+    
+    function counter($type=0)
+    {
+       $this->db->select_max('id');
+       $query = $this->db->get($this->tableName)->row_array(); 
+       if ($type == 0){ return intval($query['id']+1); }else { return intval($query['id']); }
     }
 
 }

@@ -1,48 +1,23 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Customer_lib extends Custom_Model {
+class Courier_lib extends Main_model {
 
     public function __construct($deleted=NULL)
     {
         $this->deleted = $deleted;
-        $this->tableName = 'customer';
+        $this->tableName = 'courier';
     }
 
     private $ci;
     
-    protected $field = array('id', 'first_name', 'last_name', 'type', 'address', 'shipping_address', 'phone1', 'phone2', 'joined',
-                             'fax', 'email', 'password', 'website', 'state', 'city', 'region', 'zip', 'notes', 'image', 'status',
-                             'created', 'updated', 'deleted');
-    
-       
-    function get(){
+    protected $field = array('id', 'ic', 'name', 'phone', 'address', 'email', 'image', 'company', 'joined', 'status', 'created', 'updated', 'deleted');
         
-        $this->db->select($this->field);
-        $this->db->where('deleted', NULL);
-        $this->db->where('status', 1);
-        $this->db->order_by('id', 'asc');
-        return $this->db->get($this->tableName); 
-    }
-    
     function get_detail($id=null,$type=null)
     {
         $this->db->select($this->field);
         $this->db->where('id', $id);
         $val = $this->db->get($this->tableName)->row();
         if ($val){ return ucfirst($val->$type); }
-    }
-    
-    function get_name($id=null)
-    {
-        if ($id)
-        {
-            $this->db->select('id,first_name,last_name');
-            $this->db->where('id', $id);
-            $val = $this->db->get($this->tableName)->row();
-            if ($val){ return ucfirst($val->first_name.' '.$val->last_name); }
-        }
-        else if($id == 0){ return 'Top'; }
-        else { return ''; }
     }
     
     function get_type($id=null)
@@ -75,26 +50,13 @@ class Customer_lib extends Custom_Model {
     
     function combo()
     {
-        $this->db->select($this->field);
+        $this->db->select('id,first_name,last_name');
         $this->db->where('deleted', NULL);
         $this->db->order_by('first_name', 'asc');
         $val = $this->db->get($this->tableName)->result();
         $data = null;
         if ($val){
           foreach($val as $row){ $data['options'][$row->id] = ucfirst($row->first_name.' '.$row->last_name); }    
-        }else{ $data['options'][''] = '--'; }
-        return $data;
-    }
-    
-    function combo_complete()
-    {
-        $this->db->select($this->field);
-        $this->db->where('deleted', NULL);
-        $this->db->order_by('first_name', 'asc');
-        $val = $this->db->get($this->tableName)->result();
-        $data = null;
-        if ($val){
-          foreach($val as $row){ $data['options'][$row->id] = 'CU0'.$row->id.' - '.ucfirst($row->first_name.' '.$row->last_name); }    
         }else{ $data['options'][''] = '--'; }
         return $data;
     }

@@ -14,7 +14,6 @@ class Shiprate extends MX_Controller
         $this->modul = $this->components->get(strtolower(get_class($this)));
         $this->title = strtolower(get_class($this));
         $this->city = new City_lib();
-        $this->shiprate = new Shiprate_lib();
         $this->district = new District_lib();
         
         header('Access-Control-Allow-Origin: *');
@@ -29,21 +28,16 @@ class Shiprate extends MX_Controller
     {
        $this->get_last(); 
     }
-        
-    // ajax
-    function combo_district($city,$type=null)
-    { $cityid = explode('|', $city); echo $this->city->combo_district_ajax($cityid[0],$type);  }
     
-    public function getdatatable($search=null,$source='null',$courier='null')
+    public function getdatatable($search=null,$payment='null')
     {
         if(!$search){ $result = $this->model->get_last($this->modul['limit'])->result(); }
-        else { $result = $this->model->search($source,$courier)->result(); }
+        else { $result = $this->model->search($payment)->result(); }
         
         if ($result){
 	foreach($result as $res)
 	{
-	   $output[] = array ($res->id, $res->courier, $res->city, strtolower($res->type), idr_format($res->rate),
-                              $res->district, $this->city->get_name($res->source));
+	   $output[] = array ($res->id, $res->period, $res->distance, $res->payment_type, idr_format($res->minimum), idr_format($res->rate));
 	}
             $this->output
             ->set_status_header(200)
@@ -63,17 +57,12 @@ class Shiprate extends MX_Controller
         $data['main_view'] = 'shiprate_view';
         $data['form_action'] = site_url($this->title.'/add_process');
         $data['form_action_update'] = site_url($this->title.'/update_process');
-        $data['form_action_import'] = site_url($this->title.'/import');
         $data['form_action_del'] = site_url($this->title.'/delete_all');
         $data['link'] = array('link_back' => anchor('main/','Back', array('class' => 'btn btn-danger')));
 	// ---------------------------------------- //
-        
-        $data['city'] = $this->city->combo_city_combine();
-        $data['source_city'] = $this->city->combo_city_db();
-        $data['city_name'] = $this->city->combo_city_name();
-        $data['district'] = $this->city->combo_city_combine();
-        $data['courrier'] = $this->shiprate->combo_courier();
  
+        $data['combo_time'] = combo_time();
+        
         $config['first_tag_open'] = $config['last_tag_open']= $config['next_tag_open']= $config['prev_tag_open'] = $config['num_tag_open'] = '<li>';
         $config['first_tag_close'] = $config['last_tag_close']= $config['next_tag_close']= $config['prev_tag_close'] = $config['num_tag_close'] = '</li>';
 
@@ -87,7 +76,7 @@ class Shiprate extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Courrier', 'Type', 'Source', 'Destination', 'District', 'Rate', 'Action');
+        $this->table->set_heading('#','No', 'Period', 'Distance', 'Payment Type', 'Minimum', 'Rate', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url('shiprate/getdatatable');
@@ -171,31 +160,26 @@ class Shiprate extends MX_Controller
 	$data['link'] = array('link_back' => anchor('account/','<span>back</span>', array('class' => 'back')));
 
 	// Form validation
-        $this->form_validation->set_rules('ccity', 'City', 'required');
-        $this->form_validation->set_rules('csource', 'Source City', 'required');
-        $this->form_validation->set_rules('cdistrict', 'District', 'required|callback_valid_district['.$this->input->post('ctype').']');
-        $this->form_validation->set_rules('ccourrier', 'Courrier', '');
-        $this->form_validation->set_rules('ctype', 'Rate Type', 'required');
+        $this->form_validation->set_rules('ctime1', 'Time1', 'required');
+        $this->form_validation->set_rules('ctime2', 'Time2', 'required');
+        $this->form_validation->set_rules('tdistance1', 'Start Distance', 'required|numeric|callback_valid_distance');
+        $this->form_validation->set_rules('tdistance2', 'End Distance', 'required|numeric');
+        $this->form_validation->set_rules('cpayment', 'Payment Type', 'required|callback_valid_delivery');
+        $this->form_validation->set_rules('tminimum', 'Minimum Order', 'required|numeric');
         $this->form_validation->set_rules('trate', 'Rate', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
-            if ($this->input->post('tcourrier')){$kurir = $this->input->post('tcourrier');}
-            else{ $kurir = $this->input->post('ccourrier'); }
+            $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
+            $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
             
-            $city = explode('|', $this->input->post('ccity'));
-            
-            $shiprate = array('courier' => strtoupper($kurir), 'source' => $this->input->post('csource'),
-                              'city'   => $city[1],
-                              'cityid' => $city[0],
-                              'district' => $this->input->post('cdistrict'),
-                              'type' => $this->input->post('ctype'),
+            $shiprate = array('period' => $time, 'distance' => $distance,
+                              'payment_type' => $this->input->post('cpayment'),
+                              'minimum' => $this->input->post('tminimum'),
                               'rate' => $this->input->post('trate'),
                               'created' => date('Y-m-d H:i:s'));
 
             $this->model->add($shiprate);
-            $this->session->set_flashdata('message', "One $this->title data successfully saved!");
-            
             echo 'true|Data successfully saved..!';
         }
         else{ echo 'error|'.validation_errors(); }
@@ -209,36 +193,44 @@ class Shiprate extends MX_Controller
         $shiprate = $this->model->get_by_id($uid)->row();
         $this->session->set_userdata('langid', $uid);    
         
-        echo $shiprate->id.'|'.$shiprate->courier.'|'.$shiprate->city.'|'.$shiprate->district.'|'.$shiprate->type.'|'.$shiprate->rate.'|'.$shiprate->cityid.'|'.$shiprate->source;
+        echo $shiprate->id.'|'.$shiprate->period.'|'.$shiprate->distance.'|'.$shiprate->payment_type.'|'.$shiprate->minimum.'|'.$shiprate->rate;
     }    
 
-    public function valid_district($district,$type)
+    public function valid_distance($val)
     {
-        if ($this->input->post('tcourrier')){$kurir = $this->input->post('tcourrier');}
-        else{ $kurir = $this->input->post('ccourrier'); }
+        $distance1 = $this->input->post('tdistance1');
+        $distance2 = $this->input->post('tdistance2');
         
-        $source = $this->input->post('csource');
-        
-        if ($this->model->valid_district($source,$district,$kurir,$type) == FALSE)
+        if ($distance2 < $distance1)
         {
-            $this->form_validation->set_message('valid_district', "This $this->title is already registered.!");
+            $this->form_validation->set_message('valid_distance', "Invalid Distance.!");
             return FALSE;
         }
         else{ return TRUE; }
     }
     
-    public function validating_district($district,$type)
+    public function valid_delivery($val)
+    {
+        $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
+        $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
+        
+        if ( $this->model->valid_delivery($time,$distance, $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE )
+        {
+            $this->form_validation->set_message('valid_delivery', "Delivery Rules Already Registered.!");
+            return FALSE;
+        }
+        else{ return TRUE; }
+    }
+    
+    public function validating_delivery($val)
     {
         $id = $this->session->userdata('langid');
+        $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
+        $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
         
-        if ($this->input->post('tcourrier')){$kurir = $this->input->post('tcourrier');}
-        else{ $kurir = $this->input->post('ccourrier'); }
-        
-        $source = $this->input->post('csource');
-        
-        if ($this->model->validating_district($id,$source,$district,$kurir,$type) == FALSE)
+        if ($this->model->validating_delivery($id,$time,$distance, $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE)
         {
-            $this->form_validation->set_message('validating_district', "This $this->title is already registered.!");
+            $this->form_validation->set_message('validating_delivery', "This $this->title is already registered.!");
             return FALSE;
         }
         else{ return TRUE; }
@@ -250,31 +242,28 @@ class Shiprate extends MX_Controller
         if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){
 
 	// Form validation
-        $this->form_validation->set_rules('ccity', 'City', 'required');
-        $this->form_validation->set_rules('csource', 'Source City', 'required');
-        $this->form_validation->set_rules('cdistrictupdate', 'District', 'required|callback_validating_district['.$this->input->post('ctype').']');
-        $this->form_validation->set_rules('ccourrier', 'Courrier', '');
-        $this->form_validation->set_rules('ctype', 'Rate Type', 'required');
+        $this->form_validation->set_rules('ctime1', 'Time1', 'required');
+        $this->form_validation->set_rules('ctime2', 'Time2', 'required');
+        $this->form_validation->set_rules('tdistance1', 'Start Distance', 'required|numeric|callback_valid_distance');
+        $this->form_validation->set_rules('tdistance2', 'End Distance', 'required|numeric');
+        $this->form_validation->set_rules('cpayment', 'Payment Type', 'required|callback_validating_delivery');
+        $this->form_validation->set_rules('tminimum', 'Minimum Order', 'required|numeric');
         $this->form_validation->set_rules('trate', 'Rate', 'required|numeric');
         
         if ($this->form_validation->run($this) == TRUE)
         {
-            if ($this->input->post('tcourrier')){$kurir = $this->input->post('tcourrier');}
-            else{ $kurir = $this->input->post('ccourrier'); }
-     
-            $city = explode('|', $this->input->post('ccity'));
-            $shiprate = array('courier' => strtoupper($kurir), 'source' => $this->input->post('csource'),
-                              'city'   => $city[1],
-                              'cityid' => $city[0],
-                              'district' => $this->input->post('cdistrictupdate'),
-                              'type' => $this->input->post('ctype'),
+            $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
+            $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
+            
+            $shiprate = array('period' => $time, 'distance' => $distance,
+                              'payment_type' => $this->input->post('cpayment'),
+                              'minimum' => $this->input->post('tminimum'),
                               'rate' => $this->input->post('trate'));
             
 	    $this->model->update($this->session->userdata('langid'), $shiprate);
             $this->session->set_flashdata('message', "One $this->title has successfully updated!");
             
-            echo 'true|Data successfully saved..!';
-            
+            echo 'true|Data successfully saved..!'; 
         }
         else{ echo 'error|'.validation_errors(); }
         }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }

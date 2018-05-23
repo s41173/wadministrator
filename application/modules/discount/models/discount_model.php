@@ -13,7 +13,7 @@ class Discount_model extends Custom_Model
         $this->tableName = 'discount';
     }
     
-    protected $field = array('id', 'name', 'start', 'end', 'type', 'minimum', 'percentage', 'agent', 'status', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'name', 'start', 'end', 'type', 'payment_type', 'minimum', 'percentage', 'status', 'created', 'updated', 'deleted');
     protected $com;
     
     function cek_discount($dates=null){
@@ -26,7 +26,7 @@ class Discount_model extends Custom_Model
         $this->db->update($this->tableName, $val);
     }
     
-    function get_discount($nominal=0,$agent=0,$dates=0){
+    function get_discount($nominal=0,$dates=0,$payment=null){
         
         $this->cek_discount($dates); // cek discount
         
@@ -36,16 +36,12 @@ class Discount_model extends Custom_Model
         $this->db->where('minimum <=', $nominal);
         $this->db->where('end >=', $dates);
         $this->db->where('status', 1);
+        $this->db->where('payment_type', $payment);
         $this->db->order_by('minimum', 'desc'); 
         $this->db->order_by('type', 'desc'); 
         $this->db->limit(1);
         $res = $this->db->get()->row(); 
-        if ($res){
-          $source = explode(',', $res->agent);
-          $res1 = array_search($agent, $source);
-          if ($res1 !== false) { return $res->percentage; } else { return 0; }
-          
-        }else{ return 0; }
+        if ($res){ return $res->percentage; }else{ return 0; }
     }
     
     function get_last($limit)

@@ -46,16 +46,12 @@
            <form id="searchform" class="form-inline">
   
   <div class="form-group">
-        <label> Source : </label> <br>
-        <?php $js = "class='select2_single form-control' id='csource_search' tabindex='-1' style='width:300px;' "; 
-        echo form_dropdown('csource', $source_city, isset($default['source']) ? $default['source'] : '', $js); ?>
-  </div>
-               
-  <div class="form-group">
-      <label> Courrier : </label> <br>
-      <?php $js = "class='select2_single form-control' id='ccourrier_search' tabindex='-1' style='width:170px;' "; 
-	   echo form_dropdown('ccourrier', $courrier, isset($default['ccourrier']) ? $default['ccourrier'] : '', $js); ?>
-  </div>              
+        <label> Payment Type : </label> <br>
+        <select name="cpayment" id="cpayment" class="select2_single form-control">
+            <option value="CASH"> CASH </option>
+            <option value="WALLET"> WALLET </option>
+        </select>
+  </div>             
                
               <div class="form-group btn-group"> <br>
                <button type="submit" class="btn btn-primary button_inline"> Filter </button>
@@ -99,7 +95,7 @@
     
       <!-- Modal - Add Form -->
       <div class="modal fade" onclick="" id="myModal" role="dialog">
-         <?php  $this->load->view('shiprate_form'); ?>      
+         <?php $this->load->view('shiprate_form'); ?>      
       </div>
       <!-- Modal - Add Form -->
       
@@ -117,6 +113,7 @@
       
       <script src="<?php echo base_url(); ?>js/icheck/icheck.min.js"></script>
       
+      
        <!-- Datatables JS -->
         <script src="<?php echo base_url(); ?>js/datatables/jquery.dataTables.min.js"></script>
         <script src="<?php echo base_url(); ?>js/datatables/dataTables.bootstrap.js"></script>
@@ -133,4 +130,5 @@
         <script src="<?php echo base_url(); ?>js/datatables/responsive.bootstrap.min.js"></script>
         <script src="<?php echo base_url(); ?>js/datatables/dataTables.scroller.min.js"></script>
         <script src="<?php echo base_url(); ?>js/datatables/dataTables.tableTools.js"></script>
+        
         

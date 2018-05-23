@@ -15,6 +15,7 @@
 	.tablesum{ font-size:13px;}
 	.strongs{ font-weight:normal; font-size:12px; border-top:1px dotted #000000; }
 	.poder{ border-bottom:0px solid #000000; color:#0000FF;}
+    .img_product{ height: 50px; align-content: center;}
 </style>
 
 <link rel="stylesheet" href="<?php echo base_url().'js-old/jxgrid/' ?>css/jqx.base.css" type="text/css" />
@@ -65,11 +66,15 @@
                     datafields:
                     [
                         { name: "No", type: "string" },
-						{ name: "Jenis", type: "string" },
-						{ name: "Kategori", type: "string" },
-						{ name: "Kode", type: "string" },
-						{ name: "Nama", type: "string" },
-						{ name: "Aktif", type: "string" }
+						{ name: "Customer", type: "string" },
+						{ name: "Dates", type: "string" },
+						{ name: "Type", type: "string" },
+                        { name: "Courier", type: "string" },
+                        { name: "Bank", type: "string" },
+                        { name: "Amount", type: "number" },
+                        { name: "Posted", type: "string" },
+                        { name: "Redeem", type: "string" },
+                        { name: "Redeem Dates", type: "string" }
                     ]
                 };
 			
@@ -93,43 +98,28 @@
 				autoshowfiltericon: false,
                 columns: [
                   { text: 'No', dataField: 'No', width: 50 },
-				  { text: 'Jenis', dataField: 'Jenis', width : 200 },
-				  { text: 'Kategori', dataField: 'Kategori', width : 200 },
-  				  { text: 'Kode', dataField: 'Kode', width : 100 },
-				  { text: 'Nama', dataField: 'Nama' },
-  				  { text: 'Aktif', dataField: 'Aktif', width : 80 }
+				  { text: 'Customer', dataField: 'Customer' },
+  				  { text: 'Dates', dataField: 'Dates', width : 130 },
+                  { text: 'Type', dataField: 'Type', width : 130 },
+                  { text: 'Courier', dataField: 'Courier', width : 160 },
+                  { text: 'Bank', dataField: 'Bank', width : 220 },
+                  { text: 'Amount', dataField: 'Amount', width : 150 },
+                  { text: 'Posted', dataField: 'Posted', width : 90 },
+                  { text: 'Redeem', dataField: 'Redeem', width : 90 },
+                  { text: 'Redeem Dates', dataField: 'Redeem Dates', width : 140 }
                 ]
             });
 			
-			$('#jqxgrid').jqxGrid({ pagesizeoptions: ['100', '500', '1000', '2000', '3000', '5000']}); 
+			$('#jqxgrid').jqxGrid({ pagesizeoptions: ['1000', '2000', '3000', '5000', '10000', '15000']}); 
 			
 			$("#bexport").click(function() {
 				
 				var type = $("#crtype").val();	
-				if (type == 0){ $("#jqxgrid").jqxGrid('exportdata', 'html', 'Account-Summary'); }
-				else if (type == 1){ $("#jqxgrid").jqxGrid('exportdata', 'xls', 'Account-Summary'); }
-				else if (type == 2){ $("#jqxgrid").jqxGrid('exportdata', 'pdf', 'Account-Summary'); }
-				else if (type == 3){ $("#jqxgrid").jqxGrid('exportdata', 'csv', 'Account-Summary'); }
+				if (type == 0){ $("#jqxgrid").jqxGrid('exportdata', 'html', 'Courier-Summary'); }
+				else if (type == 1){ $("#jqxgrid").jqxGrid('exportdata', 'xls', 'Courier-Summary'); }
+				else if (type == 2){ $("#jqxgrid").jqxGrid('exportdata', 'pdf', 'Courier-Summary'); }
+				else if (type == 3){ $("#jqxgrid").jqxGrid('exportdata', 'csv', 'Courier-Summary'); }
 			});
-			
-			$('#jqxgrid').on('celldoubleclick', function (event) {
-     	  		var col = args.datafield;
-				var value = args.value;
-				var res;
-			
-				if (col == 'Code')
-				{ 			
-				   res = value.split("CD-00");
-				   openwindow(res[1]);
-				}
- 			});
-			
-			function openwindow(val)
-			{
-				var site = "<?php echo site_url('ap_payment/print_invoice/');?>";
-				window.open(site+"/"+val, "", "width=800, height=600"); 
-				//alert(site+"/"+val);
-			}
 			
 			$("#table").hide();
 			
@@ -151,7 +141,7 @@
 
 	<center>
 	   <div style="border:0px solid green; width:230px;">	
-	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Kode Rekening Belanja Daerah </h4>
+	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Topup Transaction - Report </h4>
 	   </div>
 	</center>
 	
@@ -174,35 +164,50 @@
         </table>
         
     </div>
-        
-
-<!--        protected $field = array('id', 'parent_id', 'category', 'code', 'name', 'description', 'publish', 'created', 'updated', 'deleted');-->
     
-
 		<table id="table" border="0" width="100%">
 		   <thead>
            <tr>
- 	       <th> No </th> <th> Jenis </th> <th> Kategori </th> <th> Kode </th> <th> Nama </th> <th> Aktif </th>
+ 	       <th> No </th> <th> Customer </th> <th> Dates </th> <th> Type </th> <th> Courier </th> <th> Bank </th> 
+ 	       <th> Amount </th> <th> Posted </th> <th> Redeem </th> <th> Redeem Dates </th> 
 		   </tr>
            </thead>
 		  
           <tbody> 
 		  <?php 
 		      
-              function publish($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }
-              
-              function category($val)
-              {
-                  $acc = new Account_lib();
-                  return $acc->get_belanja_type($val);
+			  function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }	
+              function type($val){
+                  $res = null;
+                  switch ($val) { 
+                      case 0: $res = "Cash"; break; case 1: $res = "Driver"; break; 
+                      case 2: $res = "Transfer"; break; default: $res = "Cash";
+                  }
+                  return $res;
               }
               
-              function jenis($val)
+              function customer($val)
               {
-                  $acc = new Account_lib();
-                  return $acc->top_category($val,2);
+                  $res = new Customer_lib(); 
+                  return strtoupper($res->get_name($val));
               }
-			  		  
+              
+              function courier($val)
+              {
+                  if ($val != 0){
+                    $res = new Courier_lib(); 
+                    return strtoupper($res->get_detail($val,'name'));    
+                  }else{ return ''; }
+              }
+              
+              function bank($val)
+              {
+                  if ($val != 0){
+                    $res = new Bank_lib(); 
+                    return $res->get_details($val,'acc_no').' - '.$res->get_details($val,'acc_name');    
+                  }else{ return ''; }
+              }
+              
 		      $i=1; 
 			  if ($reports)
 			  {
@@ -211,28 +216,30 @@
 				   echo " 
 				   <tr> 
 				       <td class=\"strongs\">".$i."</td> 
-					   <td class=\"strongs\">".jenis($res->category)."</td>
-                       <td class=\"strongs\">".category($res->category)."</td> 
-					   <td class=\"strongs\">".$res->code."</td> 
-					   <td class=\"strongs\">".$res->name."</td>
-   					   <td class=\"strongs\">".publish($res->publish)."</td> 
+					   <td class=\"strongs\">".customer($res->customer)."</td>
+                       <td class=\"strongs\">".tglin($res->dates)."</td>
+                       <td class=\"strongs\">".type($res->type)."</td>
+                       <td class=\"strongs\">".courier($res->courier)."</td>
+                       <td class=\"strongs\">".bank($res->bank)."</td>
+                       <td class=\"strongs\">".$res->amount."</td>
+                       <td class=\"strongs\">".pstatus($res->status)."</td>
+                       <td class=\"strongs\">".pstatus($res->redeem)."</td>
+                       <td class=\"strongs\">".tglin($res->redeem_date)."</td>
 				   </tr>";
 				   $i++;
 				}
 			 }  
 		  ?>
-		</tbody>   
+		</tbody>      
 		</table>
         
         </div>
         
-        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('account'); ?>"> 
+        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('topup'); ?>"> 
           <img src="<?php echo base_url().'images/back.png'; ?>"> 
         </a>
-        
+    
 	</div>
-	
-</div>
 
 </body>
 </html>

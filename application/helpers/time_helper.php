@@ -195,6 +195,13 @@ function combo_month()
     return $data;
 }
 
+function combo_time()
+{
+    for($i=0; $i<=23; $i++)
+    {$data['options'][$i] = $i;}
+    return $data;
+}
+
 function get_total_days($val)
 {
    $res = null;

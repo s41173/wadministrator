@@ -23,6 +23,17 @@ $(document).ready(function (e) {
 		var url = sites_get +"/"+ del_id;
 		
 		window.location.href = url;
+	});
+
+	// fungsi jquery print
+	$(document).on('click','.text-print',function(e)
+	{	e.preventDefault();
+		var element = $(this);
+		var del_id = element.attr("id");
+		var url = sites_print_invoice +"/"+ del_id;
+		
+		// window.location.href = url;
+		window.open(url, "Invoice SO-0"+del_id, "toolbar=yes,scrollbars=yes,resizable=yes,top=200,left=600,width=800,height=600");
 		
 	});
 
@@ -64,7 +75,7 @@ $(document).ready(function (e) {
 				$("#tpass").val(result);
 			}
 		})
-		return false;	
+		return false;
 	});
 	
 	// publish status
@@ -164,6 +175,7 @@ $(document).ready(function (e) {
 										s[i][18],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
+'<a href="" class="btn btn-warning btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
@@ -217,6 +229,7 @@ $(document).ready(function (e) {
 										s[i][18],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
+'<a href="" class="btn btn-warning btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'

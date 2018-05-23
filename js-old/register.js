@@ -23,6 +23,12 @@ function setnews(permalink)
 	self.close();
 }
 
+function setvalue(acc,target)
+{
+	opener.document.getElementById(target).value = acc;
+	self.close();
+}
+
 function setpermalink(permalink)
 {
 	res = permalink.replace(/\s/g, "");

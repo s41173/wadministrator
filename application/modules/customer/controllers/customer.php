@@ -17,6 +17,10 @@ class Customer extends MX_Controller
         $this->city = new City_lib();
         $this->disctrict = new District_lib();
         $this->login = new Customer_login_lib();
+        $this->balance = new Balance_lib();
+        $this->period = new Period_lib();
+        $this->period = $this->period->get();
+        $this->ledger = new Wallet_ledger_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
@@ -24,8 +28,8 @@ class Customer extends MX_Controller
         
     }
 
-    private $properti, $modul, $title, $customer, $city, $disctrict;
-    private $role, $login;
+    private $properti, $modul, $title, $ledger, $city, $disctrict;
+    private $role, $login, $balance, $period;
 
     function index()
     {
@@ -257,6 +261,35 @@ class Customer extends MX_Controller
         
     }
     
+    // get current balance
+    function balance(){
+       
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        
+        $status = true;
+        $error = null;
+        $balance = 0;
+        
+        if (isset($datas['customer'])){
+            
+            // balance
+            $balance = $this->balance->get($datas['customer'], $this->period->month, $this->period->year);
+            $beginning = floatval($balance->beginning);
+            $trans = $this->ledger->get_sum_transaction_monthly($datas['customer'],$this->period->month, $this->period->year);
+            $trans = floatval($trans['vamount']);
+            $balance = $beginning+$trans;
+            
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('balance' => $balance, 'status' => $status, 'error' => $error); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
     private function send_confirmation_sms($pid){
        
         $customer = $this->Customer_model->get_by_id($pid)->row();
@@ -335,6 +368,46 @@ class Customer extends MX_Controller
          ->_display();
          exit;  
         }
+    }
+    
+    function get_list($target='titem')
+    {
+        $this->acl->otentikasi1($this->title);
+
+        $data['title'] = $this->properti['name'].' | Administrator  '.ucwords($this->modul['title']);
+        $data['h2title'] = $this->modul['title'];
+        $data['main_view'] = 'customer_list';
+        $data['form_action'] = site_url($this->title.'/customer_list');
+        
+        $customer = $this->Customer_model->get()->result();              
+        
+        $qty = 0;
+
+        $tmpl = array('table_open' => '<table id="example" width="100%" cellspacing="0" class="table table-striped table-bordered">');
+
+            $this->table->set_template($tmpl);
+            $this->table->set_empty("&nbsp;");
+
+            //Set heading untuk table
+            $this->table->set_heading('No', 'Code', 'Name', 'Phone', 'Email', 'Joined', 'Action');
+
+            $i = 0;
+            if ($customer){
+
+                foreach ($customer as $res)
+                {
+                   $datax = array('name' => 'button', 'type' => 'button', 'class' => 'btn btn-primary', 'content' => 'Select', 'onclick' => 'setvalue(\''.$res->id.'\',\''.$target.'\')');
+
+                    $this->table->add_row
+                    (
+                        ++$i, 'CU0'.$res->id, ucfirst($res->first_name.' '.$res->last_name), $res->phone1, $res->email, tglin($res->joined),
+                        form_button($datax)
+                    );
+                }            
+            }
+
+            $data['table'] = $this->table->generate();
+            $this->load->view('customer_list', $data);
     }
 
     function get_last()
@@ -432,6 +505,29 @@ class Customer extends MX_Controller
         
     }
     
+    function ledger($param=0)
+    {
+        $data['title'] = $this->properti['name'].' | Invoice Ledger'.ucwords($this->modul['title']);
+        $customer = $this->Customer_model->get_by_id($param)->row();
+        
+        if ($customer){
+                
+            $data['company'] = $this->properti['name'];
+
+            $data['code'] = 'CU0'.$param;
+            $data['name'] = ucfirst($customer->first_name.' '.$customer->last_name);
+            
+            // balance
+            $balance = $this->balance->get($param, $this->period->month, $this->period->year);
+            $data['beginning'] = floatval($balance->beginning);
+            $data['log'] = $this->session->userdata('log');
+
+            // transaction table
+            $data['items'] = $this->ledger->get_transaction_monthly($param, $this->period->month, $this->period->year);
+            $this->load->view('customer_ledger', $data);
+        }
+    }
+    
     function add()
     {
 
@@ -518,6 +614,7 @@ class Customer extends MX_Controller
             }
 
             $this->Customer_model->add($customer);
+            $this->balance->create($this->Customer_model->counter(1), $this->period->month, $this->period->year);
             $this->session->set_flashdata('message', "One $this->title data successfully saved!");
 //            redirect($this->title);
             

@@ -4,7 +4,7 @@
 <div class="modal-content">
 <div class="modal-header">
   <button type="button" class="close" data-dismiss="modal">&times;</button>
-  <h4 class="modal-title"> Edit - Shipping Rate </h4>
+  <h4 class="modal-title"> Edit - Delivery Rate </h4>
 </div>
 <div class="modal-body">
  
@@ -24,72 +24,58 @@
 <form id="edit_form_non" data-parsley-validate class="form-horizontal form-label-left" method="POST"
       action="<?php echo $form_action_update; ?>" >
      
-    <div class="form-group">
-       <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> City Source </label>
+   <div class="form-group">
+       <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Period </label>
        <div class="col-md-6 col-sm-6 col-xs-12">
-         <?php $js = "class='select2_single form-control' id='csource_update' style='width:100%;' "; 
-         echo form_dropdown('csource', $source_city, isset($default['sourcec']) ? $default['sourcec'] : '', $js); ?>
+          <table>
+              
+              <tr>
+ <td> <?php $js = "class='form-control' id='ctime1_update' tabindex='-1' style='width:65px; margin-right:5px;' "; 
+      echo form_dropdown('ctime1', $combo_time, isset($default['time']) ? $default['time'] : '', $js); ?>
+ </td>
+ <td>
+      <?php $js = "class='form-control' id='ctime2_update' tabindex='-1' style='width:65px;' "; 
+	  echo form_dropdown('ctime2', $combo_time, isset($default['time']) ? $default['time'] : '', $js); ?> 
+ </td>
+              </tr>
+          </table>
        </div>
     </div>
     
     <div class="form-group">
-      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> City / Region </label>
-      <div class="col-md-8 col-sm-6 col-xs-12">
-          
+       <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Distance </label>
+       <div class="col-md-6 col-sm-6 col-xs-12">
           <table>
-              <tr> 
-                  <td>
- <?php $js = "class='select2_single form-control' id='ccity_update' tabindex='-1' style='width:250px; margin-bottom:15px;' "; 
- echo form_dropdown('ccity', $city, isset($default['city']) ? $default['city'] : '', $js); ?> &nbsp;
-<button id="xbget" class="btn btn-primary" > GET </button>
-                  <br>
-                  </td> 
-              </tr>
               
-              <tr> <td> <div id="dbox_update" style="margin-top:10px;"></div> </td> </tr>
-              <tr> <td> 
- <input type="text" id="cdistrict_update_name" class="form-control" readonly style="margin-top:10px;"> 
- <input type="hidden" id="cdistrict_update" name="cdistrict">
-                   </td>
+              <tr>
+ <td> <input type="text" name="tdistance1" id="tdistance1_update" class="form-control" style="width:45px; margin-right:5px;" maxlength="2"> </td>
+ <td> <input type="text" name="tdistance2" id="tdistance2_update" class="form-control" style="width:45px;" maxlength="2"> </td>
               </tr>
           </table>
-          
-      </div>
-    </div>
-    
-    <div class="form-group">
-       <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Courrier <span class="required">*</span></label>
-       <div class="col-md-8 col-sm-6 col-xs-12">
-           
-           <table>
-               <tr>
-                   <td>
-           <?php $js = "class='form-control' id='cccourrier_update' tabindex='-1' style='width:150px; margin-right:10px;' "; 
-	       echo form_dropdown('ccourrier', $courrier, isset($default['ccourrier']) ? $default['ccourrier'] : '', $js); ?>
-                   </td>
-                   <td>
-                    <input type="text" class="form-control" name="tcourrier" placeholder="New Courrier">
-                   </td>
-               </tr>
-           </table>
-           
        </div>
     </div>
     
     <div class="form-group">
        <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Type </label>
        <div class="col-md-6 col-sm-6 col-xs-12">
-           <select id="ctype_update" name="ctype" class="form-control" style="width:120px;">
-               <option value="dimension"> Dimension </option>
-               <option value="weight"> Weight </option>
-           </select> 
+          <select name="cpayment" id="cpayment_update" class="form-control" style="width:120px;">
+            <option value="CASH"> CASH </option>
+            <option value="WALLET"> WALLET </option>
+          </select>
        </div>
+    </div>
+    
+    <div class="form-group">
+      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Minimum Order </label>
+      <div class="col-md-6 col-sm-6 col-xs-12">
+        <input type="number" class="form-control" name="tminimum" id="tminimum_update" style="width:120px;" placeholder="Minimum">
+      </div>
     </div>
     
     <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Rate </label>
       <div class="col-md-6 col-sm-6 col-xs-12">
-        <input type="number" class="form-control" id="trate_update" name="trate" style="width:120px;" placeholder="Rate">
+        <input type="number" class="form-control" name="trate" id="trate_update" style="width:120px;" placeholder="Rate">
       </div>
     </div>
 

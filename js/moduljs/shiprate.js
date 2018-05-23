@@ -7,69 +7,8 @@ $(document).ready(function (e) {
 	
     // function general
     load_data();
-	
-	// reset form
-	$("#breset,#bclose").click(function(){
-	   resets();
-	});
 
-	// fungsi ajax district / kecamatan
-	$(document).on('change','#ccity',function(e)
-	{	
-		e.preventDefault();
-		var value = $(this).val();
-		
-		var url = sites+'/combo_district/'+value;
-
-		if (value){ 
-			// batas
-			$.ajax({
-				type: 'POST',
-				url: url,
-				cache: false,
-				headers: { "cache-control": "no-cache" },
-				success: function(result) {
-				$("#dbox,#dbox_update").html(result);
-				}
-			})
-			return false;
-
-		}else { swal('Error Load Data...!', "", "error"); }
-
-	});
-
-	$(document).on('change','#ccity_update',function(e)
-	{	
-		e.preventDefault();
-	});
-
-	$(document).on('click','#xbget',function(e)
-	{	
-		e.preventDefault();
-		var value = $("#ccity_update").val();
-		
-		var url = sites+'/combo_district/'+value+"/update";
-
-		if (value){ 
-			// batas
-			$.ajax({
-				type: 'POST',
-				url: url,
-				cache: false,
-				headers: { "cache-control": "no-cache" },
-				success: function(result) {
-					
-					$('#cdistrict_update').hide();
-					$('#cdistrict_update_name').hide();
-					$("#dbox_update").show();
-					$("#dbox_update").html(result);
-				}
-			})
-			return false;
-
-		}else { swal('Error Load Data...!', "", "error"); }
-
-	});
+	// batas fungsi load data
 	
 	// fungsi jquery update
 	$(document).on('click','.text-primary',function(e)
@@ -90,18 +29,17 @@ $(document).ready(function (e) {
 			success: function(result) {
 				
 				res = result.split("|");
-
-				// 2|ESL|Medan|Medan Selayang|weight|5000
+				var time = res[1].split("-");
+				var distance = res[2].split("-");
 
 				$("#tid_update").val(res[0]);
-				$("#cccourrier_update").val(res[1]);
-				$('#ccity_update').val(res[6]+"|"+res[2]).change();
-				$('#cdistrict_update').val(res[3]).change();
-				$('#cdistrict_update_name').val(res[3]);
-				$('#ctype_update').val(res[4]).change();
-				$('#trate_update').val(res[5]);
-				$('#csource_update').val(res[7]).change();
-				$("#dbox_update").hide();
+				$("#ctime1_update").val(time[0]).change();
+				$("#ctime2_update").val(time[1]).change();
+				$("#tdistance1_update").val(distance[0]);
+				$("#tdistance2_update").val(distance[1]);
+				$("#cpayment_update").val(res[3]).change();
+				$("#tminimum_update").val(res[4]);
+				$("#trate_update").val(res[5]);
 			}
 		})
 		return false;	
@@ -140,9 +78,8 @@ $(document).ready(function (e) {
 
 	$('#searchform').submit(function() {
 		
-		var source = $("#csource_search").val();
-		var courier = $("#ccourrier_search").val();
-		var param = ['searching',source,courier];
+		var payment = $("#cpayment").val();
+		var param = ['searching',payment];
 		
 		// alert(publish+" - "+dates);
 		
@@ -156,7 +93,6 @@ $(document).ready(function (e) {
 			success: function(data) {
 				
 				if (!param[1]){ param[1] = 'null'; }
-				if (!param[2]){ param[2] = 'null'; }
 				load_data_search(param);
 			}
 		})
@@ -169,15 +105,6 @@ $(document).ready(function (e) {
 // document ready end	
 });
 
-    function resets()
-    {
-	  $(document).ready(function (e) {
-		  
-		 $("#tname,#uploadImage").val("");
-		 $("#catimg,#catimg_update").attr("src","");
-	  });
-	}
-	
 	function load_data_search(search=null)
 	{
 		$(document).ready(function (e) {
@@ -185,11 +112,9 @@ $(document).ready(function (e) {
 			var oTable = $('#datatable-buttons').dataTable();
 			var stts = 'btn btn-danger';
 			
-				console.log(source+"/"+search[0]+"/"+search[1]+"/"+search[2]+"/"+search[3]);
-			
 		    $.ajax({
 				type : 'GET',
-				url: source+"/"+search[0]+"/"+search[1]+"/"+search[2],
+				url: source+"/"+search[0]+"/"+search[1],
 				//force to handle it as text
 				contentType: "application/json",
 				dataType: "json",
@@ -203,22 +128,20 @@ $(document).ready(function (e) {
 		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
 							
 		for(var i = 0; i < s.length; i++) {
-			if (s[i][4] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }	
-			 oTable.fnAddData([
+			oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
-						i+1,
-						s[i][1],
-						s[i][3],
-					    s[i][6],
-						s[i][2],
-						s[i][5],
-						s[i][4],
+					   i+1,
+					   s[i][1],
+					   s[i][2],
+					   s[i][3],
+					   s[i][4],
+					   s[i][5],
 '<div class="btn-group" role"group">'+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a>'+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
-							   ]);										
-							} // End For
+							  ]);										
+		   } // End For
 											
 				},
 				error: function(e){
@@ -254,22 +177,20 @@ $(document).ready(function (e) {
 		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
 							
 							for(var i = 0; i < s.length; i++) {
-							if (s[i][4] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }	
 							 oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 										i+1,
 										s[i][1],
-										s[i][3],
-										s[i][6],
 										s[i][2],
-										s[i][5],
+										s[i][3],
 										s[i][4],
+										s[i][5],
 '<div class="btn-group" role"group">'+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a>'+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
 											   ]);										
-											} // End For
+							} // End For
 											
 											
 				},
@@ -283,3 +204,12 @@ $(document).ready(function (e) {
         });
 	}
 	// batas fungsi load data
+
+	function resets()
+	{  
+	   $(document).ready(function (e) {
+		  // reset form
+		  $("#breset").click();
+		//   alert('hallo saya reset');
+	  });
+	}

@@ -10,10 +10,10 @@ class Shiprate_model extends Custom_Model
         $this->logs = new Log_lib();
         $this->com = new Components();
         $this->com = $this->com->get_id('shiprate');
-        $this->tableName = 'shiprate';
+        $this->tableName = 'delivery_rate';
     }
     
-    protected $field = array('id', 'courier', 'source', 'city', 'cityid', 'district', 'type', 'rate', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'period', 'distance', 'payment_type', 'minimum', 'rate', 'created', 'updated', 'deleted');
     protected $com;
             
     function count_all_num_rows()
@@ -40,33 +40,32 @@ class Shiprate_model extends Custom_Model
         return $this->db->get(); 
     }
     
-    function search($source, $courier)
+    function search($payment)
     {
         $this->db->select($this->field);
         $this->db->from($this->tableName); 
         $this->db->where('deleted', $this->deleted);
-        $this->cek_null_string($source, 'source');
-        $this->cek_null_string($courier, 'courier');
+        $this->cek_null_string($payment, 'payment_type');
         return $this->db->get(); 
     }
     
-    function valid_district($source,$district,$kurir,$type)
+    function valid_delivery($period,$distance,$payment,$minimum=0)
     {
-       $this->db->where('source', $source);
-       $this->db->where('district', $district);
-       $this->db->where('courier', $kurir);
-       $this->db->where('type', $type);
+       $this->db->where('period', $period);
+       $this->db->where('distance', $distance);
+       $this->db->where('payment_type', $payment);
+       $this->db->where('minimum', $minimum);
        $query = $this->db->get($this->tableName)->num_rows();
 
        if($query > 0){ return FALSE; }else{ return TRUE; } 
     }
     
-    function validating_district($id,$source,$district,$kurir,$type)
+    function validating_delivery($id,$period,$distance,$payment,$minimum=0)
     {
-       $this->db->where('source', $source); 
-       $this->db->where('district', $district);
-       $this->db->where('courier', $kurir);
-       $this->db->where('type', $type);
+       $this->db->where('period', $period);
+       $this->db->where('distance', $distance);
+       $this->db->where('payment_type', $payment);
+       $this->db->where('minimum', $minimum);
        $this->db->where_not_in('id', $id);
        $query = $this->db->get($this->tableName)->num_rows();
 
