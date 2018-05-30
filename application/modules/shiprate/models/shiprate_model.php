@@ -13,7 +13,7 @@ class Shiprate_model extends Custom_Model
         $this->tableName = 'delivery_rate';
     }
     
-    protected $field = array('id', 'period', 'distance', 'payment_type', 'minimum', 'rate', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'period_start', 'period_end', 'distance_start', 'distance_end', 'payment_type', 'minimum', 'rate', 'created', 'updated', 'deleted');
     protected $com;
             
     function count_all_num_rows()
@@ -49,10 +49,26 @@ class Shiprate_model extends Custom_Model
         return $this->db->get(); 
     }
     
-    function valid_delivery($period,$distance,$payment,$minimum=0)
+    function calculate($period=0,$distance=0,$payment="CASH",$minimum=0)
     {
-       $this->db->where('period', $period);
-       $this->db->where('distance', $distance);
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('period_start <=', $period);
+        $this->db->where('period_end >', $period);
+        $this->db->where('distance_start <=', $distance);
+        $this->db->where('distance_end >=', $distance);
+        $this->db->where('payment_type', $payment);
+        $this->db->where('minimum <=', $minimum);
+        $this->db->where('deleted', $this->deleted);
+        return $this->db->get(); 
+    }
+    
+    function valid_delivery($period_start,$period_end,$distance_start,$distance_end,$payment,$minimum=0)
+    {
+       $this->db->where('period_start', $period_start);
+       $this->db->where('period_end', $period_end);
+       $this->db->where('distance_start', $distance_start);
+       $this->db->where('distance_end', $distance_end);
        $this->db->where('payment_type', $payment);
        $this->db->where('minimum', $minimum);
        $query = $this->db->get($this->tableName)->num_rows();
@@ -60,10 +76,12 @@ class Shiprate_model extends Custom_Model
        if($query > 0){ return FALSE; }else{ return TRUE; } 
     }
     
-    function validating_delivery($id,$period,$distance,$payment,$minimum=0)
+    function validating_delivery($id,$period_start,$period_end,$distance_start,$distance_end,$payment,$minimum=0)
     {
-       $this->db->where('period', $period);
-       $this->db->where('distance', $distance);
+       $this->db->where('period_start', $period_start);
+       $this->db->where('period_end', $period_end);
+       $this->db->where('distance_start', $distance_start);
+       $this->db->where('distance_end', $distance_end);
        $this->db->where('payment_type', $payment);
        $this->db->where('minimum', $minimum);
        $this->db->where_not_in('id', $id);

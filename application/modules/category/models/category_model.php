@@ -13,7 +13,7 @@ class Category_model extends Custom_Model
         $this->tableName = 'category';
     }
     
-    protected $field = array('id', 'name', 'parent_id', 'publish', 'image', 'permalink', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'name', 'parent_id', 'publish', 'image', 'permalink', 'orders', 'created', 'updated', 'deleted');
     protected $com;
     
     function get_last_category($limit, $offset=null)

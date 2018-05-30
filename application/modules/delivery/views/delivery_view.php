@@ -8,7 +8,7 @@
 <link href="<?php echo base_url(); ?>js/datatables/dataTables.tableTools.css" rel="stylesheet" type="text/css" />
 <link href="<?php echo base_url(); ?>css/icheck/flat/green.css" rel="stylesheet" type="text/css">
 
-<script src="<?php echo base_url(); ?>js/moduljs/shipping.js"></script>
+<script src="<?php echo base_url(); ?>js/moduljs/delivery.js"></script>
 <script src="<?php echo base_url(); ?>js-old/register.js"></script>
 <script src="<?php echo base_url(); ?>js-old/jquery.maskedinput-1.3.min.js"></script>
 
@@ -34,16 +34,16 @@
 
 <script type="text/javascript">
 
-	var sites_add  = "<?php echo site_url('shipping/add_process/');?>";
-	var sites_edit = "<?php echo site_url('shipping/update_process/');?>";
-	var sites_del  = "<?php echo site_url('shipping/delete/');?>";
-	var sites_get  = "<?php echo site_url('shipping/update/');?>";
-    var sites_confirmation  = "<?php echo site_url('shipping/confirmation/');?>";
-    var sites_payment_confirmation  = "<?php echo site_url('shipping/paid_confirmation/');?>";
-    var sites_print_invoice  = "<?php echo site_url('shipping/invoice/');?>";
-    var sites_email_invoice  = "<?php echo site_url('shipping/send_invoice_email/');?>";
-    var sites_primary   = "<?php echo site_url('shipping/publish/');?>";
-	var sites_attribute = "<?php echo site_url('shipping/attribute/');?>";
+	var sites_add  = "<?php echo site_url('delivery/add_process/');?>";
+	var sites_edit = "<?php echo site_url('delivery/update_process/');?>";
+	var sites_del  = "<?php echo site_url('delivery/delete/');?>";
+	var sites_get  = "<?php echo site_url('delivery/update/');?>";
+    var sites_confirmation  = "<?php echo site_url('delivery/confirmation/');?>";
+    var sites_payment_confirmation  = "<?php echo site_url('delivery/paid_confirmation/');?>";
+    var sites_print_invoice  = "<?php echo site_url('delivery/invoice/');?>";
+    var sites_email_invoice  = "<?php echo site_url('delivery/send_invoice_email/');?>";
+    var sites_primary   = "<?php echo site_url('delivery/publish/');?>";
+	var sites_attribute = "<?php echo site_url('delivery/attribute/');?>";
 	var source = "<?php echo $source;?>";
     
     var url  = "<?php echo $graph;?>";
@@ -102,19 +102,40 @@
                 <div class="x_content">
            
            <!-- searching form -->
-           
+
+<?php
+    
+$atts1 = array(
+	  'class'      => 'btn btn-primary button_inline',
+	  'title'      => 'Customer - List',
+	  'width'      => '800',
+	  'height'     => '600',
+	  'scrollbars' => 'yes',
+	  'status'     => 'yes',
+	  'resizable'  => 'yes',
+	  'screenx'    =>  '\'+((parseInt(screen.width) - 800)/2)+\'',
+	  'screeny'    =>  '\'+((parseInt(screen.height) - 600)/2)+\'',
+);
+
+?>
+          
            <form id="searchform" class="form-inline">
-             
-             <div class="form-group">
+                           
+              <div class="form-group">
                 <label class="control-label labelx"> Customer : </label> <br>  
-                <?php $js = "class='select2_single form-control' id='ccustomer_search' tabindex='-1' style='min-width:200px;' "; 
-			        echo form_dropdown('ccustomer', $customer, isset($default['customer']) ? $default['customer'] : '', $js); ?>
+                 <input type="text" class="form-control" name="tcust" id="ccust" readonly style="width:70px;">
+                 <?php echo anchor_popup(site_url("customer/get_list/ccust/"), '[ ... ]', $atts1); ?> &nbsp;
                    &nbsp;
+              </div>
+              
+               <div class="form-group">
+                <label class="control-label labelx"> Sales : </label> <br>    
+                <input type="text" class="form-control" id="tsales" name="tsales" style="width:100px;"> &nbsp;
               </div>
                
               <div class="form-group">
                 <label class="control-label labelx"> Shipped Status : </label> <br>    
-                <select name="cship" id="cship" class="form-control" style="min-width:150px;">
+                <select name="cship" id="cship" class="form-control" style="min-width:120px;">
                    <option value="" selected> -- </option>
                    <option value="1"> Shipped </option>
                    <option value="0"> Unshipped </option>
@@ -122,11 +143,11 @@
               </div>
                
               <div class="form-group">
-                <label class="control-label labelx"> Paid Status : </label> <br>    
-                <select name="cpaid" id="cpaid" class="form-control" style="min-width:150px;">
-                   <option value="" selected> -- </option>
-                   <option value="1"> Paid </option>
-                   <option value="0"> Unpaid </option>
+                <label class="control-label labelx"> Received Status : </label> <br>    
+                <select name="creceived" id="creceived" class="form-control" style="min-width:120px;">
+                   <option value="zero" selected> -- </option>
+                   <option value="1"> Received </option>
+                   <option value="0"> Unreceived </option>
                 </select> &nbsp;
               </div>
               
@@ -146,15 +167,6 @@
 
       <div class="table-responsive">
         <?php echo ! empty($table) ? $table : ''; ?>            
-      </div>
-
-      <div class="form-group" id="chkbox">
-        Check All : 
-        <button type="submit" id="cekallbutton" class="btn btn-danger btn-xs"> <span class="glyphicon glyphicon-trash"></span>
-        </button>
-        <button id="bconfirm" data-target="#myModal4" title="Payment Confirmation" class="btn btn-primary btn-xs"> 
-            <span class="glyphicon glyphicon-credit-card"></span>
-        </button>
       </div>
       <!-- Check All Function -->
 </form>       
@@ -176,27 +188,27 @@
     
       <!-- Modal - Add Form -->
       <div class="modal fade" id="myModal" role="dialog">
-         <?php $this->load->view('shipping_confirmation'); ?>      
+         <?php //$this->load->view('shipping_confirmation'); ?>      
       </div>
       <!-- Modal - Add Form -->
       
       <!-- Modal Attribute -->
       <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	     
-		 <?php $this->load->view('shipping_update'); ?> 
+		 <?php $this->load->view('delivery_update'); ?> 
       </div>
       <!-- Modal Attribute -->
       
       
       <!-- Modal - Report Form -->
       <div class="modal fade" id="myModal3" role="dialog">
-         <?php $this->load->view('shipping_report_panel'); ?>    
+         <?php $this->load->view('delivery_report_panel'); ?>    
       </div>
       <!-- Modal - Report Form -->
               
       <!-- Modal - Report Form -->
       <div class="modal fade" id="myModal4" role="dialog">
-         <?php $this->load->view('shipping_payment_confirmation'); ?>    
+         <?php //$this->load->view('shipping_payment_confirmation'); ?>    
       </div>
       <!-- Modal - Report Form -->
       

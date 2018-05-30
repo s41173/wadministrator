@@ -29,6 +29,16 @@ class Period_lib extends Custom_Model {
         $this->db->update($this->tableName, $val);
     }
     
+    function updateid($uid, $users)
+    {
+        $this->db->where('id', $uid);
+        $this->db->update($this->tableName, $users);
+        
+        $val = array('updated' => date('Y-m-d H:i:s'));
+        $this->db->where('id', $uid);
+        $this->db->update($this->tableName, $val);
+    }
+    
 }
 
 /* End of file Property.php */

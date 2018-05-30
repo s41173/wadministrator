@@ -249,6 +249,35 @@ $(document).ready(function (e) {
 		})
 		return false;	
 	});
+
+	// recommend status
+	$(document).on('click','.recomend_status',function(e)
+	{	
+		e.preventDefault();
+		var element = $(this);
+		var del_id = element.attr("id");
+		var url = sites_recomend +"/"+ del_id;
+		$(".error").fadeOut();
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+    	    cache: false,
+			headers: { "cache-control": "no-cache" },
+			success: function(result) {
+				
+				res = result.split("|");
+				if (res[0] == "true")
+				{   
+			        error_mess(1,res[1],0);
+					load_data();
+				}
+				else if (res[0] == 'warning'){ error_mess(2,res[1],0); }
+				else{ error_mess(3,res[1],0); }
+			}
+		})
+		return false;	
+	});
 	
 	
 	$('#searchform').submit(function() {
@@ -290,6 +319,7 @@ $(document).ready(function (e) {
 			
 			var oTable = $('#datatable-buttons').dataTable();
 			var stts = 'btn btn-danger';
+			var recomend = 'btn btn-danger';
 			
 				// console.log(source+"/"+search[0]+"/"+search[1]+"/"+search[2]+"/"+search[3]);
 			
@@ -310,6 +340,7 @@ $(document).ready(function (e) {
 							
 		for(var i = 0; i < s.length; i++) {
 			if (s[i][6] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+			if (s[i][7] == 1){ recomend = 'btn btn-success'; }else { recomend = 'btn btn-warning'; }
 			oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 						  i+1,
@@ -318,8 +349,10 @@ $(document).ready(function (e) {
 						  s[i][1],
 						  s[i][4],
 						  s[i][5],
+						  s[i][8],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
+'<a href="" class="'+recomend+' btn-xs recomend_status" id="' +s[i][0]+ '" title="Recomend Status"> <i class="fa fa-fire"> </i> </a> '+
 '<a href="" class="btn btn-default btn-xs text-img" id="'+s[i][0]+'" title="Product Image"> <i class="fa fa-picture-o"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '</div>'
@@ -344,6 +377,7 @@ $(document).ready(function (e) {
 			
 			var oTable = $('#datatable-buttons').dataTable();
 			var stts = 'btn btn-danger';
+			var recomend = 'btn btn-danger';
 			
 		    $.ajax({
 				type : 'GET',
@@ -362,6 +396,7 @@ $(document).ready(function (e) {
 							
 							for(var i = 0; i < s.length; i++) {
 						  if (s[i][6] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+						  if (s[i][7] == 1){ recomend = 'btn btn-success'; }else { recomend = 'btn btn-warning'; }
 						  oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 										i+1,
@@ -370,8 +405,10 @@ $(document).ready(function (e) {
 										s[i][1],
 										s[i][4],
 										s[i][5],
+										s[i][8],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a> '+
+'<a href="" class="'+recomend+' btn-xs recomend_status" id="' +s[i][0]+ '" title="Recomend Status"> <i class="fa fa-fire"> </i> </a> '+
 '<a href="" class="btn btn-default btn-xs text-img" id="'+s[i][0]+'" title="Product Image"> <i class="fa fa-picture-o"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '</div>'

@@ -43,7 +43,7 @@ class Product extends MX_Controller
          foreach($result as $res)
 	 {   
 	   $output[] = array ($res->id, $res->sku, $this->category->get_name($res->category), base_url().'images/product/'.$res->image,
-                              strtoupper($res->name), idr_format($res->price), $res->publish
+                              strtoupper($res->name), idr_format($res->price), $res->publish, $res->recommended, $res->orders
                              );
 	 } 
          
@@ -83,7 +83,7 @@ class Product extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Image', 'Category', 'SKU', 'Name', 'Price', 'Action');
+        $this->table->set_heading('#','No', 'Image', 'Category', 'SKU', 'Name', 'Price', 'Order', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url($this->title.'/getdatatable');
@@ -113,6 +113,16 @@ class Product extends MX_Controller
        $this->Product_model->update($uid,$lng);
        echo 'true|Status Changed...!';
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
+    }
+    
+    function recomend($uid = null)
+    {
+       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
+       $val = $this->Product_model->get_by_id($uid)->row();
+       if ($val->recommended == 0){ $lng = array('recommended' => 1); }else { $lng = array('recommended' => 0); }
+       $this->Product_model->update($uid,$lng);
+       echo 'true|Status Changed...!';
+       }else{ echo "error|Sorry, you do not have the right to change recommended status..!"; }
     }
     
     function delete_all($type='soft')
@@ -332,6 +342,7 @@ class Product extends MX_Controller
         $data['default']['qty']   = $product->qty;
         $data['default']['start'] = $product->start;
         $data['default']['end'] = $product->end;
+        $data['default']['order'] = $product->orders;
         $data['default']['url_type'] = $product->url_type;
         $data['default']['image'] = base_url().'images/product/'.$product->image;
          
@@ -617,6 +628,7 @@ class Product extends MX_Controller
             $this->form_validation->set_rules('tqty', 'Qty', 'required|numeric|callback_valid_qty');
             $this->form_validation->set_rules('tstart', 'Start Time', 'required|callback_valid_time');
             $this->form_validation->set_rules('tend', 'End Time', 'required');
+            $this->form_validation->set_rules('torder', 'Product Order', 'required|numeric');
             $this->form_validation->set_rules('tdesc', 'Description', '');
             
             if ($this->form_validation->run($this) == TRUE)
@@ -644,7 +656,7 @@ class Product extends MX_Controller
                                      'sku' => $this->input->post('tsku'), 'start' => $start, 'end' => $end, 'qty' => $qty, 
                                      'restricted' => $this->input->post('crestrict'), 'capital' => $this->input->post('tmodal'), 'price' => $this->input->post('tprice'),
                                      'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
-                                     'description' => $this->input->post('tdesc'));
+                                     'description' => $this->input->post('tdesc'), 'orders' => $this->input->post('torder'));
                 }
                 else
                 {
@@ -654,7 +666,7 @@ class Product extends MX_Controller
                                      'sku' => $this->input->post('tsku'), 'start' => $start, 'end' => $end, 'qty' => $qty, 
                                      'restricted' => $this->input->post('crestrict'), 'capital' => $this->input->post('tmodal'), 'price' => $this->input->post('tprice'),
                                      'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
-                                     'description' => $this->input->post('tdesc'),
+                                     'description' => $this->input->post('tdesc'), 'orders' => $this->input->post('torder'),
                                      'image' => $info['file_name']);
                 }
                 

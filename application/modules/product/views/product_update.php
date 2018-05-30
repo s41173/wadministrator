@@ -147,13 +147,20 @@
           </div>
       </div>
       
-       <div class="form-group">
+      <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Upload Type </label>
       <div class="col-md-6 col-sm-6 col-xs-12">
          <select name="curl" id="curl" class="form-control" style="width:150px;"> 
 <option value="UPLOAD"<?php echo set_select('ctype', 'UPLOAD', isset($default['url_type']) && $default['url_type'] == 'UPLOAD' ? TRUE : FALSE); ?>> UPLOAD </option>  
 <option value="URL"<?php echo set_select('ctype', 'URL', isset($default['url_type']) && $default['url_type'] == 'URL' ? TRUE : FALSE); ?>> URL </option>  
         </select>
+      </div>
+      </div>  
+      
+      <div class="form-group">
+      <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Order </label>
+      <div class="col-md-6 col-sm-6 col-xs-12">
+         <input type="number" name="torder" class="form-control" required style="width:65px;" value="<?php echo isset($default['order']) ? $default['order'] : '' ?>">
       </div>
       </div>  
       

@@ -67,17 +67,14 @@
                     [
                         { name: "No", type: "string" },
 						{ name: "Sales No", type: "string" },
-						{ name: "Sales Date", type: "string" },
-						{ name: "Ship Date", type: "string" },
+                        { name: "Sales Date", type: "string" },
+						{ name: "Deliver Date", type: "string" },
 						{ name: "Courier", type: "string" },
-						{ name: "Package", type: "number" },
-                        { name: "Rate", type: "number" },
-                        { name: "Weight", type: "number" },
-                        { name: "AWB", type: "string" },
-                        { name: "Destination", type: "string" },
-                        { name: "Destination Desc", type: "string" },
+						{ name: "Distance", type: "number" },
+                        { name: "Received", type: "string" },
                         { name: "Amount", type: "number" },
-                        { name: "Paid Date", type: "string" },
+                        { name: "Confirmed", type: "string" },
+                        { name: "Rating", type: "string" },
                         { name: "Status", type: "string" }
                     ]
                 };
@@ -104,17 +101,14 @@
                   { text: 'No', dataField: 'No', width: 50 },
 				  { text: 'Sales No', dataField: 'Sales No', width : 100 },
 				  { text: 'Sales Date', dataField: 'Sales Date', width : 150 },
-  				  { text: 'Ship Date', dataField: 'Ship Date', width : 150 },
-				  { text: 'Courier', dataField: 'Courier', width : 100 },
-                  { text: 'Package', dataField: 'Package', width : 150 },
-    { text: 'Rate', dataField: 'Rate', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Weight', datafield: 'Weight', width: 100, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'AWB', dataField: 'AWB', width : 100},
-    { text: 'Destination', dataField: 'Destination', width : 150 },
-    { text: 'Destination Desc', dataField: 'Destination Desc', width : 150 },
-    { text: 'Amount', dataField: 'Amount', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Paid Date', dataField: 'Paid Date', width : 150 },
-    { text: 'Status', dataField: 'Status', width : 80 }
+  				  { text: 'Deliver Date', dataField: 'Deliver Date', width : 120 },
+				  { text: 'Courier', dataField: 'Courier' },
+                  { text: 'Distance', dataField: 'Distance', width : 100 },
+                  { text: 'Received', dataField: 'Received', width : 120 },
+    { text: 'Amount', dataField: 'Amount', width : 170, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
+    { text: 'Confirmed', dataField: 'Confirmed', width : 110 },
+    { text: 'Rating', dataField: 'Rating', width : 110 },                    
+    { text: 'Status', dataField: 'Status', width : 100 }
                 ]
             });
 			
@@ -161,8 +155,7 @@
 	
 	<div style="border:0px solid red; float:left;">
 		<table border="0">
-			<tr> <td> Sales Period </td> <td> : </td> <td> <?php echo $sales_start.' - '.$sales_end; ?> </td> </tr>
-            <tr> <td> Shipping Period </td> <td> : </td> <td> <?php echo $shipping_start.' - '.$shipping_end; ?> </td> </tr>
+            <tr> <td> Shipping Period </td> <td> : </td> <td> <?php echo $delivery_start.' - '.$delivery_end; ?> </td> </tr>
             <tr> <td> Confirmation Status </td> <td> : </td> <td> <?php echo $paid; ?> </td> </tr>
 			<tr> <td> Run Date </td> <td> : </td> <td> <?php echo $rundate; ?> </td> </tr>
 			<tr> <td> Log </td> <td> : </td> <td> <?php echo $log; ?> </td> </tr>
@@ -171,7 +164,7 @@
 
 	<center>
 	   <div style="border:0px solid green; width:230px;">	
-	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Shipping Report </h4>
+	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Delivery Report </h4>
 	   </div>
 	</center>
 	
@@ -199,25 +192,27 @@
 		   
             <thead>
            <tr>
-<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Ship Date </th> <th> Courier </th> <th> Package </th> <th> Rate </th> <th> Weight </th>  <th> AWB </th> <th> Destination </th> <th> Destination Desc </th> <th> Amount </th> <th> Paid Date </th>
-<th> Status </th> 
+<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Deliver Date </th> <th> Courier </th> <th> Distance </th> <th> Received </th> <th> Amount </th>  <th> Confirmed </th> <th> Rating </th> <th> Status </th> 
            </tr>
            </thead>
 		  
-          <tbody> 
+         <tbody> 
 		  <?php 
               
-              function get_sales_date($val)
+              function get_sales($val,$type='dates')
               {
                   $res = new Sales_lib(); 
                   $result = $res->get_detail_sales($val);
-                  return tglin($result->dates);
+                  if ($type == 'dates'){ return tglin($result->dates); }
+                  elseif ($type == 'code'){ return $result->code; }
+                  
               }
               
-              function dest($val){
-                  
-                  $res = new Shiprate_lib();
-                  return $res->get_city_name($val);
+              function courier($val)
+              {
+                  $res = new Courier_lib(); 
+                  $result = $res->get_detail($val,'name');
+                  return $result;
               }
               
               function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }
@@ -230,18 +225,15 @@
 				   echo " 
 				   <tr> 
 				       <td class=\"strongs\">".$i."</td> 
-                       <td class=\"strongs\"> SO-0".$res->sales_id."</td> 
-                       <td class=\"strongs\">".get_sales_date($res->sales_id)."</td> 
-					   <td class=\"strongs\">".tglin($res->shipdate)."</td>
-                       <td class=\"strongs\">".strtoupper($res->courier)."</td>
-                       <td class=\"strongs\">".$res->package."</td>
-                       <td class=\"strongs\">".$res->rate."</td>
-                       <td class=\"strongs\">".$res->weight."</td>
-                       <td class=\"strongs\">".$res->awb."</td>
-                       <td class=\"strongs\">".dest($res->dest)."</td>
-                       <td class=\"strongs\">".$res->dest_desc."</td>
+                       <td class=\"strongs\">".get_sales($res->sales_id,'code')."</td> 
+                       <td class=\"strongs\">".get_sales($res->sales_id)."</td> 
+					   <td class=\"strongs\">".tglin($res->dates)."</td>
+                       <td class=\"strongs\">".strtoupper(courier($res->courier))."</td>
+                       <td class=\"strongs\">".$res->distance."</td>
+                       <td class=\"strongs\">".tglin($res->received)."</td>
                        <td class=\"strongs\">".$res->amount."</td>
-                       <td class=\"strongs\">".tglin($res->paid_date)."</td>
+                       <td class=\"strongs\">".pstatus($res->confirm_customer)."</td>
+                       <td class=\"strongs\">".$res->rating."</td>
                        <td class=\"strongs\">".pstatus($res->status)."</td>
 				   </tr>";
 				   $i++;
@@ -253,11 +245,9 @@
         
         </div>
         
-        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('sales'); ?>"> 
+        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('delivery'); ?>"> 
           <img src="<?php echo base_url().'images/back.png'; ?>"> 
         </a>
-        
-	</div>
 	
 </div>
 

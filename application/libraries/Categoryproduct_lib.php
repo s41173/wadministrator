@@ -8,7 +8,7 @@ class Categoryproduct_lib extends Main_Model {
         $this->tableName = 'category';
     }
     
-    protected $field = array('id', 'name', 'parent_id', 'publish', 'image', 'permalink');
+    protected $field = array('id', 'name', 'parent_id', 'publish', 'orders', 'image', 'permalink');
     
     function get()
     {
@@ -25,7 +25,7 @@ class Categoryproduct_lib extends Main_Model {
         $this->db->where('deleted', NULL);
         $this->db->where('publish',1);
         $this->db->where('parent_id',$parent);
-        $this->db->order_by('name', 'asc');
+        $this->db->order_by('orders', 'asc');
         return $this->db->get($this->tableName)->result();
     }
 

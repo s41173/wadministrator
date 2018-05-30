@@ -40,6 +40,7 @@
     var sites_confirmation  = "<?php echo site_url('sales_payment/get_last/');?>";
     var sites_print_invoice  = "<?php echo site_url('sales/invoice/');?>";
     var sites_primary   = "<?php echo site_url('sales/publish/');?>";
+    var sites_redeem    = "<?php echo site_url('sales/redeem/');?>";
 	var sites_attribute = "<?php echo site_url('sales/attribute/');?>";
     var sites_commision = "<?php echo site_url('commision/get_last/');?>";
 	var source = "<?php echo $source;?>";
@@ -106,7 +107,7 @@
           </div>
 
           <div class="form-group">
-            <input type="number" class="form-control" style="max-width:80px;" name="tyear" id="tyear" value="<?php echo $year; ?>">
+<input type="number" class="form-control" style="max-width:80px;" name="tyear" id="tyear" value="<?php echo $year; ?>">
           </div>
 
       <div class="form-group btn-group">
@@ -144,12 +145,29 @@
            
            <!-- searching form -->
            
+                
+<?php
+    
+$atts1 = array(
+	  'class'      => 'btn btn-primary button_inline',
+	  'title'      => 'Customer - List',
+	  'width'      => '800',
+	  'height'     => '600',
+	  'scrollbars' => 'yes',
+	  'status'     => 'yes',
+	  'resizable'  => 'yes',
+	  'screenx'    =>  '\'+((parseInt(screen.width) - 800)/2)+\'',
+	  'screeny'    =>  '\'+((parseInt(screen.height) - 600)/2)+\'',
+);
+
+?>
+           
            <form id="searchform" class="form-inline">
              
              <div class="form-group">
-                <label class="control-label labelx"> Agent : </label> <br>  
-                <?php $js = "class='select2_single form-control' id='ccustomer_search' tabindex='-1' style='min-width:230px;' "; 
-			        echo form_dropdown('ccustomer', $agent, isset($default['customer']) ? $default['customer'] : '', $js); ?>
+                <label class="control-label labelx"> Customer : </label> <br>  
+                 CU0 <input type="text" class="form-control" name="tcust" id="ccust" readonly style="width:70px;">
+                 <?php echo anchor_popup(site_url("customer/get_list/ccust/"), '[ ... ]', $atts1); ?> &nbsp;
                    &nbsp;
               </div>
                            
@@ -200,7 +218,7 @@
             <!-- <button type="button" onClick="resets();" class="btn btn-primary" data-toggle="modal" data-target="#myModal"> <i class="fa fa-plus"></i>&nbsp;Add New </button> -->
 <!--    <a class="btn btn-primary" href="<?php //echo site_url('sales/add'); ?>"> <i class="fa fa-plus"></i>&nbsp;Add New </a>-->
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal3"> Report  </button>
-            <a class="btn btn-success" href="<?php echo site_url('shipping'); ?>"> Shipping </a>
+            <a class="btn btn-success" href="<?php echo site_url('delivery'); ?>"> Shipping </a>
                
                <!-- links -->
 	           <?php if (!empty($link)){foreach($link as $links){echo $links . '';}} ?>

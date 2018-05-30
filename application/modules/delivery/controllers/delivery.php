@@ -20,22 +20,35 @@ class Delivery extends MX_Controller
         $this->city = new City_lib();
         $this->product = new Product_lib();
         $this->sales = new Sales_lib();
-//        $this->delivery = new Delivery_lib();
+        $this->shiprate = new Shiprate_lib();
         $this->courier = new Courier_lib();
+        $this->api_lib = new Api_lib();
     }
 
-    private $properti, $modul, $title;
-    private $role, $customer, $payment, $city, $product, $sales, $delivery, $courier;
+    private $properti, $modul, $title, $api_lib;
+    private $role, $customer, $payment, $city, $product, $sales, $shiprate, $courier;
 
     function index()
     {
        $this->get_last(); 
     }
+    
+    function calculate_shiprate($distance=9,$payment='CASH',$minimum=10000) {
+        
+        $nilai = '{ "period":"'.date('H').'", "distance":"'.$distance.'", "payment":"'.$payment.'", "minimum":"'.$minimum.'" }';
+        $url = site_url('shiprate/calculate');
+
+        $response = $this->api_lib->request($url, $nilai);
+        $datax = (array) json_decode($response, true);
+        return intval($datax['result']);
+    }
      
-    public function getdatatable($search=null,$cust='null',$payment='null',$ship='null')
+    public function getdatatable($search=null,$cust='null',$sales='null',$ship='null',$received='null')
     {
         if(!$search){ $result = $this->Delivery_model->get_last($this->modul['limit'])->result(); }
-        else {$result = $this->Delivery_model->search($cust,$payment,$ship)->result(); }
+        else {
+            $result = $this->Delivery_model->search($cust,$sales,$ship,$received)->result(); 
+        }
 	
         $output = null;
         if ($result){
@@ -50,15 +63,16 @@ class Delivery extends MX_Controller
            
 	   $output[] = array ($res->id, 
                               $sales->code, // sales no
-                              tglin($sales->dates), // sales date
+                              tglin($sales->dates), // sales no
                               $this->customer->get_name($sales->cust_id), // customer
                               tglin($res->dates), // delivery date
                               strtoupper($this->courier->get_detail($res->courier, 'name')), // courier
                               $res->distance, // distance
-                              $res->received, // destination
-                              $res->amount, // package
+                              $res->received, // received
+                              idr_format($res->amount), // package
                               $res->status, // paid status 
-                              $status // shipped status
+                              $status, // shipped status
+                              $res->confirm_customer
                              );
 	 } 
          
@@ -87,6 +101,7 @@ class Delivery extends MX_Controller
         $data['link'] = array('link_back' => anchor('sales/','Back', array('class' => 'btn btn-danger')));
 
         $data['customer'] = $this->customer->combo();
+        $data['courier'] = $this->courier->combo();
         $data['array'] = array('','');
         $data['month'] = combo_month();
         $data['year'] = date('Y');
@@ -116,74 +131,55 @@ class Delivery extends MX_Controller
         // Load absen view dengan melewatkan var $data sbgai parameter
 	$this->load->view('template', $data);
     }
-    
-    function chart($month=null,$year=null)
-    {   
-        $data = $this->category->get();
-        $datax = array();
-        foreach ($data as $res) 
-        {  
-           $tot = $this->Delivery_model->get_delivery_qty_based_category($res->id,$month,$year); 
-           $point = array("label" => $res->name , "y" => $tot);
-           array_push($datax, $point);      
-        }
-        echo json_encode($datax, JSON_NUMERIC_CHECK);
-    }
-    
+        
     function publish($uid = null)
     {
        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
-//       $val = $this->Delivery_model->get_by_id($uid)->row();
-//       if ($val->approved == 0){ $lng = array('approved' => 1); }else { $lng = array('approved' => 0); }
-//       $this->Delivery_model->update($uid,$lng);
-//       echo 'true|Status Changed...!';
-         echo "error|Please make payment confirmation transaction, to change this status...!";
+       $val = $this->Delivery_model->get_by_id($uid)->row();
+       $sales = $this->sales->get_by_id($val->sales_id)->row();
+       
+        if ($sales->approved != 0){
+            echo "error|Sales Posted, Transaction Rollback..!"; 
+        }
+        elseif ($val->amount == 0){
+            echo "error|Invalid Amount, Transaction Rollback..!"; 
+        }
+        else{ 
+            if ($val->status == 0){ $lng = array('status' => 1);  }else { $lng = array('status' => 0); }
+            $this->Delivery_model->update($uid,$lng);
+            
+            // update shipping amount sales
+            $res = array('shipping' => $val->amount);
+            $this->sales->update($val->sales_id, $res);
+            
+            // kirim pesan notif ke customer bahwa pengiriman sedang dalam proses
+            echo 'true|Status Changed...!';
+        }
+       
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
-    }
-    
-    function delete_all($type='soft')
-    {
-      if ($this->acl->otentikasi_admin($this->title,'ajax') == TRUE){
-      
-        $cek = $this->input->post('cek');
-        $jumlah = count($cek);
-
-        if($cek)
-        {
-          $jumlah = count($cek);
-          $x = 0;
-          for ($i=0; $i<$jumlah; $i++)
-          {
-             if ($type == 'soft') { $this->Delivery_model->delete($cek[$i]); }
-             else { $this->delivery->delete_by_delivery($cek[$i]);
-                    $this->Delivery_model->force_delete($cek[$i]);  
-             }
-             $x=$x+1;
-          }
-          $res = intval($jumlah-$x);
-          //$this->session->set_flashdata('message', "$res $this->title successfully removed &nbsp; - &nbsp; $x related to another component..!!");
-          $mess = "$res $this->title successfully removed &nbsp; - &nbsp; $x related to another component..!!";
-          echo 'true|'.$mess;
-        }
-        else
-        { //$this->session->set_flashdata('message', "No $this->title Selected..!!"); 
-          $mess = "No $this->title Selected..!!";
-          echo 'false|'.$mess;
-        }
-      }else{ echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-      
     }
 
     function delete($uid)
     {
         if ($this->acl->otentikasi_admin($this->title,'ajax') == TRUE){
-            $this->Delivery_model->delete($uid);
             
-            $this->session->set_flashdata('message', "1 $this->title successfully removed..!");
-
-            echo "true|1 $this->title successfully removed..!";
+            $val = $this->Delivery_model->get_by_id($uid)->row();
+            $sales = $this->sales->get_by_id($val->sales_id)->row();
+            
+            if ($sales->approved == 0){
+                    
+               if ($val->status == 1){
+                   
+                  $lng = array('received' => null, 'status' => 0);
+                  $this->Delivery_model->update($uid,$lng);
+                  echo "true|1 $this->title successfully rollback..!";  
+               }else{
+                   $this->Delivery_model->delete($uid);
+                   echo "true|1 $this->title successfully removed..!";  
+               } 
+            }else{ echo "error|Sales Posted, Transaction Rollback..!"; }
+            
         }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-        
     }
     
     function add($param=0)
@@ -211,125 +207,10 @@ class Delivery extends MX_Controller
 
         $this->load->view('template', $data);
     }
-
-    function add_process()
-    {
-        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){
-
-        $data['title'] = $this->properti['name'].' | Administrator  '.ucwords($this->modul['title']);
-        $data['h2title'] = $this->modul['title'];
-        $data['main_view'] = 'category_view';
-	$data['form_action'] = site_url($this->title.'/add_process');
-	$data['link'] = array('link_back' => anchor('category/','<span>back</span>', array('class' => 'back')));
-
-	// Form validation
-        $this->form_validation->set_rules('ccustomer', 'Customer', 'required');
-        $this->form_validation->set_rules('tdates', 'Transaction Date', 'required');
-        $this->form_validation->set_rules('tduedates', 'Transaction Due Date', 'required');
-        $this->form_validation->set_rules('cpayment', 'Payment Type', 'required');
-
-        if ($this->form_validation->run($this) == TRUE)
-        {
-            $delivery = array('cust_id' => $this->input->post('ccustomer'), 'dates' => date("Y-m-d H:i:s"),
-                           'due_date' => $this->input->post('tduedates'), 'payment_id' => $this->input->post('cpayment'), 
-                           'created' => date('Y-m-d H:i:s'));
-
-            $this->Delivery_model->add($delivery);
-            echo "true|One $this->title data successfully saved!|".$this->Delivery_model->counter(1);
-            $this->session->set_flashdata('message', "One $this->title data successfully saved!");
-//            redirect($this->title.'/update/'.$this->Delivery_model->counter(1));
-        }
-        else{ $data['message'] = validation_errors(); echo "error|".validation_errors(); }
-        }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-
-    }
     
-    function add_item($sid=0)
-    { 
-       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
-       if ($sid == 0){ echo 'error|Sales ID not saved'; }
-       else {
-       
-         // Form validation
-        $this->form_validation->set_rules('cproduct', 'Product', 'required|callback_valid_product['.$sid.']');
-        $this->form_validation->set_rules('tqty', 'Qty', 'required|numeric');
-        $this->form_validation->set_rules('tprice', 'Price', 'required|numeric');
-        $this->form_validation->set_rules('ctax', 'Tax Type', 'required');
-
-            if ($this->form_validation->run($this) == TRUE && $this->valid_confirm($sid) == TRUE)
-            {
-                $amt_price = intval($this->input->post('tqty')*$this->input->post('tprice'));
-                $tax = intval($this->input->post('ctax')*$amt_price);
-                $delivery = array('product_id' => $this->input->post('cproduct'), 'delivery_id' => $sid,
-                               'qty' => $this->input->post('tqty'), 'tax' => $tax, 'weight' => $this->product->get_weight($this->input->post('cproduct')),
-                               'price' => $this->input->post('tprice'), 'amount' => intval($amt_price+$tax));
-
-                $this->sitem->add($delivery);
-                $this->update_trans($sid);
-                echo "true|Sales Transaction data successfully saved!|";
-            }
-            else{ echo "error|".validation_errors(); }  
-        }
-       }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-    }
-    
-    private function update_trans($sid)
-    {
-        $totals = $this->sitem->total($sid);
-        $price = intval($totals['qty']*$totals['price']);
-        
-        // delivery total        
-        $transaction = array('tax' => $totals['tax'], 'total' => $price, 'amount' => intval($totals['tax']+$price), 'delivery' => $this->delivery->total($sid));
-	$this->Delivery_model->update($sid, $transaction);
-    }
-    
-    function delete_item($id,$sid)
-    {
-        if ($this->acl->otentikasi2($this->title) == TRUE && $this->valid_confirm($sid) == TRUE){ 
-        
-        $this->sitem->delete($id); // memanggil model untuk mendelete data
-        $this->update_trans($sid);
-        $this->session->set_flashdata('message', "1 item successfully removed..!"); // set flash data message dengan session
-        }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-        redirect($this->title.'/update/'.$sid);
-    }
     
     private function split_array($val)
     { return implode(",",$val); }
-   
-    function delivery($sid=0)
-    { 
-       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
-       if ($sid == 0){ echo 'error|Sales ID not saved'; }
-       else {
-       
-        $delivery = $this->Delivery_model->get_by_id($sid)->row();
-           
-         // Form validation
-        $this->form_validation->set_rules('ccity', 'City', 'required');
-        $this->form_validation->set_rules('tshipaddkurir', 'Delivery Address', 'required');
-        $this->form_validation->set_rules('ccourier', 'Courier Service', 'required');
-        $this->form_validation->set_rules('cpackage', 'Package Type', '');
-        $this->form_validation->set_rules('tweight', 'Weight', 'required|numeric');
-
-            if ($this->form_validation->run($this) == TRUE && $this->valid_confirm($sid) == TRUE)
-            {
-                $city = explode('|', $this->input->post('ccity'));
-                $package = explode('|', $this->input->post('cpackage'));
-                $param = array('delivery_id' => $sid, 'shipdate' => null,
-                               'courier' => $this->input->post('ccourier'), 'dest' => $city[1], 'dest_id' => $city[0],
-                               'dest_desc' => $this->input->post('tshipaddkurir'), 'package' => $package[0],
-                               'weight' => $this->input->post('tweight'), 'rate' => $this->input->post('rate'),
-                               'amount' => intval($this->input->post('rate')*$this->input->post('tweight')));
-                
-                $this->delivery->create($sid, $param);
-                $this->update_trans($sid);
-                echo "true|Delivery Transaction data successfully saved!|";
-            }
-            else{ echo "error|".validation_errors(); }  
-        }
-       }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
-    }
     
     // Fungsi update untuk menset texfield dengan nilai dari database
     function update($sid)
@@ -339,8 +220,8 @@ class Delivery extends MX_Controller
         
         $sales = $this->sales->get_detail_sales($delivery->sales_id);
         
-        echo $sid.'|'.$delivery->sales_id.'|'.tglin($sales->dates).'|'.strtoupper($delivery->courier).'|'.$delivery->package.'|'.$delivery->awb.'|'.
-             $this->shiprate->get_city_name($delivery->dest).'|'.$delivery->dest_desc.'|'.$sales->code.'|'.$delivery->district;
+        echo $sid.'|'.$delivery->sales_id.'|'.$sales->code.'|'.tglin($sales->dates).'|'.strtoupper($delivery->courier).'|'.$delivery->coordinate.'|'.$delivery->distance.'|'.
+             $delivery->destination.'|'.$delivery->amount.'|'.$delivery->status.'|'.$sales->approved;
     }
     
     function send_invoice_email($param)
@@ -454,14 +335,24 @@ class Delivery extends MX_Controller
 	$data['link'] = array('link_back' => anchor('category/','<span>back</span>', array('class' => 'back')));
 
 	// Form validation
-        $this->form_validation->set_rules('taddress', 'Address', 'required|callback_valid_shipdate');
+        $this->form_validation->set_rules('ccourier', 'Courrier', 'required|callback_valid_delivery');
+        $this->form_validation->set_rules('tcoordinate', 'Coordinate', 'required');
+        $this->form_validation->set_rules('tdistance', 'Distance', 'required|numeric');
+        $this->form_validation->set_rules('taddress', 'Address', 'required');
+        $this->form_validation->set_rules('tamount', 'Amount', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
-            $delivery = array('dest_desc' => $this->input->post('taddress'),'updated' => date('Y-m-d H:i:s'));
+            $sales = $this->sales->get_by_id($this->input->post('tsid_update'))->row();
+            $rate = $this->calculate_shiprate($this->input->post('tdistance'), $sales->payment_type, $sales->amount);
+            
+            if ($rate == 1){ $amount = 0; }else{ $amount = intval($rate*$this->input->post('tdistance')); }
+            
+            $delivery = array('destination' => $this->input->post('taddress'), 'courier' => $this->input->post('ccourier'),
+                              'distance' => $this->input->post('tdistance'), 'coordinate' => $this->input->post('tcoordinate'),
+                              'amount' => $amount, 'updated' => date('Y-m-d H:i:s'));
 
             $this->Delivery_model->update($this->session->userdata('langid'), $delivery);
-            $this->session->set_flashdata('message', "One $this->title data successfully saved!");
             echo "true|One $this->title data successfully saved!|".$param;
         }
         else{ echo "error|". validation_errors(); }
@@ -469,118 +360,29 @@ class Delivery extends MX_Controller
         //redirect($this->title.'/update/'.$param);
     }
     
-    function confirmation($sid)
+    function confirmation($uid)
     {
-        $delivery = $this->Delivery_model->get_by_id($sid)->row();
-	$this->session->set_userdata('langid', $delivery->id);
-        
-        echo $sid.'|'.$delivery->status.'|'.$delivery->shipdate.'|'.$delivery->awb;
-    }
-    
-    function paid_confirmation($sid)
-    {
-        $delivery = $this->Delivery_model->get_by_id($sid)->row();
-	$this->session->set_userdata('langid', $delivery->id);
-        
-        echo $sid.'|'.$delivery->paid_date;
-    }
-    
-    function paid_confirmation_process()
-    {
-       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){
-
-	// Form validation
-        $this->form_validation->set_rules('tpdates', 'Paid Date', '');
-        
-        $shipdate = $this->Delivery_model->get_by_id($this->session->userdata('langid'))->row();
-        $shipdate = $shipdate->shipdate;
-
-        if ($this->form_validation->run($this) == TRUE)
-        {  
-            if ($this->input->post('tpdates') && $shipdate != null){
-                $delivery = array('paid_date' => $this->input->post('tpdates'), 'status' => 1, 'updated' => date('Y-m-d H:i:s'));
-                $stts = 'confirmed!';
-            }
-            else { $delivery = array('paid_date' => null, 'status' => 0, 'updated' => date('Y-m-d H:i:s')); 
-                $stts = 'unconfirmed!';   
-            }   
-                
-            $this->Delivery_model->update($this->session->userdata('langid'), $delivery);
-            echo "true|One $this->title delivery status successfully ".$stts;
+       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
+           
+        $val = $this->Delivery_model->get_by_id($uid)->row();
+        if ($val->status == 0){
+            echo "error|Transaction not posted..!";
         }
-        else{ echo "error|One $this->title delivery status successfully ".$stts; }
-        }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; } 
-    }
-    
-    function payment_confirmation()
-    {
-       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){
-
-        $data['title'] = $this->properti['name'].' | Administrator  '.ucwords($this->modul['title']);
-        $data['h2title'] = $this->modul['title'];
-        $data['main_view'] = 'delivery_form';
-	$data['link'] = array('link_back' => anchor('category/','<span>back</span>', array('class' => 'back')));
-
-	// Form validation
-        $this->form_validation->set_rules('tcdates', 'Confirmation Date', 'required');
-
-        if ($this->form_validation->run($this) == TRUE && $this->valid_payment_confirm($this->session->userdata('langid')) == TRUE)
-        {  
-            if ($this->input->post('cstts') == '1'){
-                $delivery = array('shipdate' => $this->input->post('tcdates'), 'awb' => $this->input->post('tairway'), 'updated' => date('Y-m-d H:i:s'));
-                $stts = 'confirmed!';
-            }
-            else { $delivery = array('shipdate' => null, 'updated' => date('Y-m-d H:i:s')); 
-                $stts = 'unconfirmed!';   
-            }   
-                
-            // lakukan action email ke customer
-            $this->Delivery_model->update($this->session->userdata('langid'), $delivery);
-            echo "true|One $this->title delivery status successfully ".$stts;
+        else{ 
+            $lng = array('received' => date('Y-m-d H:i:s'));
+            $this->Delivery_model->update($uid,$lng);
+            echo 'true|Transaction Has Been Received at '.date('d-m-Y H:i:s');
         }
-        else{ echo "error|". validation_errors(). '- Delivery Status Already Confirmed'; }
-        }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; } 
+       
+       }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
     }
     
-    
-    
-    
-    function valid_product($id,$sid)
+    function valid_delivery($val=null)
     {
-        if ($this->sitem->valid_product($id,$sid) == FALSE)
+        $res = $this->Delivery_model->get_by_id($this->session->userdata('langid'))->row();
+        if ($res->status == 1)
         {
-            $this->form_validation->set_message('valid_product','Product already listed..!');
-            return FALSE;
-        }
-        else{ return TRUE; }
-    }
-    
-    function valid_name($val)
-    {
-        if ($this->Delivery_model->valid('name',$val) == FALSE)
-        {
-            $this->form_validation->set_message('valid_name','Name registered..!');
-            return FALSE;
-        }
-        else{ return TRUE; }
-    }
-    
-    function valid_payment_confirm($id)
-    {
-        if ($this->Delivery_model->valid_payment_confirm($id) == FALSE)
-        {
-            $this->form_validation->set_message('valid_payment_confirm','Delivery Payment Already Confirmed..!');
-            return FALSE;
-        }
-        else{ return TRUE; }
-    }
-    
-    function valid_shipdate($val=null,$type=null)
-    {
-        if (!$type){ $param = $this->session->userdata('langid'); }else { $param = $val; }
-        if ($this->Delivery_model->valid_shipdate($param) == FALSE)
-        {
-            $this->form_validation->set_message('valid_shipdate','Delivery Date Already Confirmed..!');
+            $this->form_validation->set_message('valid_delivery','Transaction has been posted..!');
             return FALSE;
         }
         else{ return TRUE; }
@@ -592,20 +394,13 @@ class Delivery extends MX_Controller
         $data['title'] = $this->properti['name'].' | Report '.ucwords($this->modul['title']);
 
         $data['rundate'] = tglin(date('Y-m-d'));
-        $data['log'] = $this->session->userdata('log');
-        $salesperiod = $this->input->post('salesperiod');  
+        $data['log'] = $this->session->userdata('log');  
         $deliveryperiod = $this->input->post('deliveryperiod');  
-        
-        $sales_start = picker_between_split($salesperiod, 0);
-        $sales_end = picker_between_split($salesperiod, 1);
         
         $delivery_start = picker_between_split($deliveryperiod, 0);
         $delivery_end = picker_between_split($deliveryperiod, 1);
         
         $paid = $this->input->post('cpaid');
-
-        $data['sales_start'] = tglin($sales_start);
-        $data['sales_end'] = tglin($sales_end);
         
         $data['delivery_start'] = tglin($delivery_start);
         $data['delivery_end'] = tglin($delivery_end);
@@ -614,7 +409,7 @@ class Delivery extends MX_Controller
         
 //        Property Details
         $data['company'] = $this->properti['name'];
-        $data['reports'] = $this->Delivery_model->report($sales_start, $sales_end, $delivery_start, $delivery_end, $paid)->result();
+        $data['reports'] = $this->Delivery_model->report($delivery_start, $delivery_end, $paid)->result();
         
         if ($this->input->post('ctype') == 0){ $this->load->view('delivery_report', $data); }
         else { $this->load->view('delivery_pivot', $data); }

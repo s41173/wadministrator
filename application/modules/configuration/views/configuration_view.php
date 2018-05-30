@@ -60,17 +60,28 @@
         <span class="step_no">2</span>
         <span class="step_descr">
                           <small> Bank Details  </small>
-                      </span>
+            </span>
       </a>
     </li>
+    
     <li>
       <a href="#step-3">
         <span class="step_no">3</span>
         <span class="step_descr">
-                          <small> Site Configuration </small>
-                      </span>
+          <small> Site Configuration </small>
+        </span>
       </a>
     </li>
+    
+    <li>
+      <a href="#step-4">
+        <span class="step_no">4</span>
+        <span class="step_descr">
+          <small> Period Management </small>
+        </span>
+      </a>
+    </li>
+    
   </ul>
 
 
@@ -171,6 +182,41 @@
      </form>
   </div>
   
+  <div id="step-4">   
+    <form class="form-horizontal form-label-left" id="ajaxform4" method="post" action="<?php echo $form_action4; ?>">
+     
+    <div class="form-group">
+      <label class="control-label col-md-3 col-sm-3 col-xs-12"> Begin Period </label>
+      <div class="col-md-2 col-sm-6 col-xs-12">
+         <?php $js = "class='form-control' id='cbegin_month' tabindex='-1' style='width:100%;' "; 
+	      echo form_dropdown('cbegin_month', $cmonth, isset($default['month']) ? $default['month'] : '', $js); ?>
+      </div>
+      <div class="col-md-2 col-sm-6 col-xs-12">
+        <input type="number" maxlength="4" class="form-control" name="tbegin_year" id="tbegin_year" title="" />     
+      </div>
+    </div>
+        
+    <div class="form-group">
+      <label class="control-label col-md-3 col-sm-3 col-xs-12"> Period </label>
+      <div class="col-md-2 col-sm-6 col-xs-12">
+         <?php $js = "class='form-control' id='cmonth' tabindex='-1' style='width:100%;' "; 
+	      echo form_dropdown('cmonth', $cmonth, isset($default['month']) ? $default['month'] : '', $js); ?>
+      </div>
+      <div class="col-md-2 col-sm-6 col-xs-12">
+        <input type="number" maxlength="4" class="form-control" name="tyear" id="tyear" title="" />     
+      </div>
+    </div>
+      
+      <div class="ln_solid"></div>
+      <div class="form-group">
+        <div class="col-md-9 col-sm-9 col-xs-12 col-md-offset-3">
+          <button type="submit" class="btn btn-primary" id="button">Save</button>
+        </div>
+      </div>
+      
+     </form>
+  </div>
+  
   
   <div id="step-3">
      
@@ -218,6 +264,8 @@
 	<!-- end form -->
     
   </div>
+  
+
 
 </div>
 <!-- End SmartWizard Content -->

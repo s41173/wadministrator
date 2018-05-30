@@ -74,6 +74,10 @@ $(document).ready(function (e) {
 					$("#tmetakey").val(data[0][16]);
 					$("#catimg_update").attr("src","");
 					$("#catimg_update").attr("src",base_url+"images/property/"+data[0][17]);
+					$("#cmonth").val(data[0][18]).change();
+					$("#tyear").val(data[0][19]);
+					$("#cbegin_month").val(data[0][20]).change();
+					$("#tbegin_year").val(data[0][21]);
 			   
 				},
 				error: function(e){
@@ -101,10 +105,23 @@ $(document).ready(function (e) {
 				success: function(s) 
 				{   
 				       console.log(s);
-					  						oTable.fnClearTable();						$(".chkselect").remove()
-			$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');														for(var i = 0; i < s.length; i++) {						  oTable.fnAddData([
-'<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',										i+1,										s[i][1],										s[i][7],										s[i][9],										s[i][10],
-'<a href="" class="text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> <a href="#" class="text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'										    ]);																					} // End For 
+					  
+						oTable.fnClearTable();
+						$(".chkselect").remove()
+	
+		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
+							
+							for(var i = 0; i < s.length; i++) {
+						  oTable.fnAddData([
+'<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
+										i+1,
+										s[i][1],
+										s[i][7],
+										s[i][9],
+										s[i][10],
+'<a href="" class="text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> <a href="#" class="text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'
+										    ]);										
+											} // End For 
 											
 				},
 				error: function(e){

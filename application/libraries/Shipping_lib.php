@@ -5,11 +5,11 @@ class Shipping_lib extends Custom_Model {
     public function __construct($deleted=NULL)
     {
         $this->deleted = $deleted;
-        $this->tableName = 'shipping';
+        $this->tableName = 'delivery';
     }
 
-    protected $field = array('id', 'sales_id', 'shipdate', 'courier', 'awb', 'origin', 'origin_id', 'origin_desc', 'dest',
-                             'district', 'dest_desc', 'package', 'rate', 'weight', 'amount', 'status');
+    protected $field = array('id', 'sales_id', 'dates', 'courier', 'coordinate', 'destination', 'distance', 'received',
+                             'amount', 'confirm_customer', 'rating', 'comments', 'status', 'created', 'updated', 'deleted');
     
     function cek_relation($id,$type)
     {
@@ -37,7 +37,7 @@ class Shipping_lib extends Custom_Model {
            $this->db->where('sales_id', $sid);
            $res = $this->db->get($this->tableName)->row();
            if ($res){
-              if ($res->shipdate){ return true; }else{ return false; } 
+              if ($res->received){ return true; }else{ return false; } 
            }
            
         } 

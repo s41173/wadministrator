@@ -29,17 +29,15 @@ $(document).ready(function (e) {
 			success: function(result) {
 				
 				res = result.split("|");
-				var time = res[1].split("-");
-				var distance = res[2].split("-");
-
+				
 				$("#tid_update").val(res[0]);
-				$("#ctime1_update").val(time[0]).change();
-				$("#ctime2_update").val(time[1]).change();
-				$("#tdistance1_update").val(distance[0]);
-				$("#tdistance2_update").val(distance[1]);
-				$("#cpayment_update").val(res[3]).change();
-				$("#tminimum_update").val(res[4]);
-				$("#trate_update").val(res[5]);
+				$("#ctime1_update").val(res[1]).change();
+				$("#ctime2_update").val(res[2]).change();
+				$("#tdistance1_update").val(res[3]);
+				$("#tdistance2_update").val(res[4]);
+				$("#cpayment_update").val(res[5]).change();
+				$("#tminimum_update").val(res[6]);
+				$("#trate_update").val(res[7]);
 			}
 		})
 		return false;	

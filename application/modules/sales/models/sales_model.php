@@ -13,8 +13,8 @@ class Sales_model extends Custom_Model
         $this->tableName = 'sales';
     }
     
-    protected $field = array('id', 'code', 'dates', 'agent_id', 'cust_id', 'amount', 'tax', 'cost', 'discount', 'total', 'shipping',                            
-                             'approved', 'log', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'code', 'dates', 'cust_id', 'amount', 'tax', 'cost', 'discount', 'total', 'shipping',                            
+                             'payment_type', 'redeem', 'redeem_date', 'approved', 'log', 'created', 'updated', 'deleted');
     protected $com;
     
     function get_last($limit, $offset=null)
@@ -32,8 +32,7 @@ class Sales_model extends Custom_Model
         $this->db->select($this->field);
         $this->db->from($this->tableName); 
         $this->db->where('deleted', $this->deleted);
-        $this->cek_null_string($cust, 'agent_id');
-        
+        $this->cek_null_string($cust, 'cust_id');
         $this->cek_null_string($confirm, 'approved');
         $this->db->order_by('dates', 'desc'); 
         return $this->db->get(); 

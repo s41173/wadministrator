@@ -43,7 +43,7 @@ class Category extends MX_Controller
         if ($result){
 	foreach($result as $res)
 	{
-	   $output[] = array ($res->id, $res->name, $this->category->get_name($res->parent_id), base_url().'images/category/'.$res->image, $res->publish);
+	   $output[] = array ($res->id, $res->name, $this->category->get_name($res->parent_id), base_url().'images/category/'.$res->image, $res->publish, $res->orders);
 	}
             $this->output
             ->set_status_header(200)
@@ -92,7 +92,7 @@ class Category extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Name', 'Parent', 'Action');
+        $this->table->set_heading('#','No', 'Name', 'Parent', 'Order', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url('category/getdatatable');
@@ -185,6 +185,7 @@ class Category extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tname', 'Name', 'required|callback_valid_category');
         $this->form_validation->set_rules('cparent', 'Parent Category', 'required');
+        $this->form_validation->set_rules('torder', 'Category Order', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -205,14 +206,14 @@ class Category extends MX_Controller
                 $data['error'] = $this->upload->display_errors();
                 $category = array('name' => strtolower($this->input->post('tname')),
                                   'parent_id' => $this->input->post('cparent'), 'permalink' => split_space($this->input->post('tname')),
-                                  'image' => null, 'created' => date('Y-m-d H:i:s'));
+                                  'orders' => $this->input->post('torder'), 'image' => null, 'created' => date('Y-m-d H:i:s'));
             }
             else
             {
                 $info = $this->upload->data();
                 $category = array('name' => strtolower($this->input->post('tname')),
                                   'parent_id' => $this->input->post('cparent'), 'permalink' => split_space($this->input->post('tname')),
-                                  'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
+                                  'orders' => $this->input->post('torder'), 'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
             }
 
             $this->Category_model->add($category);
@@ -241,7 +242,7 @@ class Category extends MX_Controller
 	$this->session->set_userdata('langid', $category->id);
 //        $this->load->view('category_update', $data);
         
-        echo $uid.'|'.$category->name.'|'.$category->parent_id.'|'.base_url().'images/category/'.$category->image;
+        echo $uid.'|'.$category->name.'|'.$category->parent_id.'|'.base_url().'images/category/'.$category->image.'|'.$category->orders;
     }
 
 
@@ -281,6 +282,7 @@ class Category extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tname_update', 'Name', 'required|max_length[100]|callback_validation_category');
         $this->form_validation->set_rules('cparent_update', 'Parent Category', 'required');
+        $this->form_validation->set_rules('torder', 'Category Order', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -298,13 +300,15 @@ class Category extends MX_Controller
             if ( !$this->upload->do_upload("userfile_update")) // if upload failure
             {
                 $data['error'] = $this->upload->display_errors();
-                $category = array('name' => strtolower($this->input->post('tname_update')),'parent_id' => $this->input->post('cparent_update'), 'permalink' => split_space($this->input->post('tname_update')));
+                $category = array('name' => strtolower($this->input->post('tname_update')), 'orders' => $this->input->post('torder'),
+                                  'parent_id' => $this->input->post('cparent_update'), 'permalink' => split_space($this->input->post('tname_update')));
                 $img = null;
             }
             else
             {
                 $info = $this->upload->data();
-                $category = array('name' => strtolower($this->input->post('tname_update')),'parent_id' => $this->input->post('cparent_update'), 'image' => $info['file_name'], 'permalink' => split_space($this->input->post('tname_update')));
+                $category = array('name' => strtolower($this->input->post('tname_update')), 'orders' => $this->input->post('torder'),
+                                  'parent_id' => $this->input->post('cparent_update'), 'image' => $info['file_name'], 'permalink' => split_space($this->input->post('tname_update')));
                 $img = base_url().'images/category/'.$info['file_name'];
             }
 

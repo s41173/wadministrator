@@ -14,8 +14,8 @@ class Product_model extends Custom_Model
     }
     
     protected $field = array('id', 'sku', 'category', 'name', 'description', 'image', 'url_type', 'url1', 'url2', 'url3',
-                             'url4', 'url5', 'url6', 'capital', 'price', 'supplier', 'restricted', 'qty', 'start', 'end', 'publish', 
-                             'created', 'updated', 'deleted');
+                             'url4', 'url5', 'url6', 'capital', 'price', 'supplier', 'restricted', 'qty', 'start', 'end',
+                             'recommended', 'orders', 'publish', 'created', 'updated', 'deleted');
     protected $com;
     
     function get_last($limit, $offset=null)

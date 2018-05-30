@@ -10,6 +10,7 @@ class Shiprate_lib extends Custom_Model {
 
     protected $field = array('id', 'courier', 'city', 'cityid', 'district', 'type', 'rate', 'created', 'updated', 'deleted');
 
+    
     function combo_courier()
     {
         $data = null;

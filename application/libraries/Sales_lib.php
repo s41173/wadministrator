@@ -6,10 +6,13 @@ class Sales_lib extends Custom_Model {
     {
         $this->deleted = $deleted;
         $this->tableName = 'sales';
+        $this->logs = new Log_lib();
+        $this->com = new Components();
+        $this->com = $this->com->get_id('sales');
     }
 
-    protected $field = array('id', 'code', 'dates', 'agent_id', 'cust_id', 'amount', 'tax', 'cost', 'total', 'shipping',
-                             'approved', 'log', 'created', 'updated', 'deleted');
+    protected $field = array('id', 'code', 'dates', 'cust_id', 'amount', 'tax', 'cost', 'discount', 'total', 'shipping',                            
+                             'payment_type', 'redeem', 'redeem_date', 'approved', 'log', 'created', 'updated', 'deleted');
 
     function cek_relation($id,$type)
     {

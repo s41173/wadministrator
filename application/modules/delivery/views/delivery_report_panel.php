@@ -18,23 +18,16 @@
 
 <form id="" data-parsley-validate class="form-horizontal form-label-left" method="POST" 
 action="<?php echo $form_action_report; ?>" enctype="multipart/form-data">
-    
+        
     <div class="form-group">
-        <label class="control-label col-md-3 col-sm-3 col-xs-12"> Sales Period </label>
+        <label class="control-label col-md-3 col-sm-3 col-xs-12"> Deliver Period </label>
         <div class="col-md-9 col-sm-9 col-xs-12">     
-<input type="text" readonly style="width: 200px" name="salesperiod" id="d1" class="form-control active" value=""> 
+<input type="text" readonly style="width: 200px" name="deliveryperiod" id="d2" class="form-control active" value=""> 
         </div>
     </div>
     
     <div class="form-group">
-        <label class="control-label col-md-3 col-sm-3 col-xs-12"> Shipping Period </label>
-        <div class="col-md-9 col-sm-9 col-xs-12">     
-<input type="text" readonly style="width: 200px" name="shippingperiod" id="d2" class="form-control active" value=""> 
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label class="control-label col-md-3 col-sm-3 col-xs-12"> Paid Status </label>
+        <label class="control-label col-md-3 col-sm-3 col-xs-12"> Status </label>
         <div class="col-md-3 col-sm-12 col-xs-12">     
 <select name="cpaid" class="form-control">
     <option value=""> -- </option>

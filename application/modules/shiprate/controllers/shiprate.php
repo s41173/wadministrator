@@ -29,6 +29,33 @@ class Shiprate extends MX_Controller
        $this->get_last(); 
     }
     
+        // api calculate
+    function calculate(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        
+        $period = $datas['period'];
+        $distance = $datas['distance'];
+        $payment = $datas['payment'];
+        $minimum = $datas['minimum'];
+                
+        $error = null;
+        $rate = 1;
+      
+        if ($period != null && $distance != null && $payment != null && $minimum != null){ 
+            $result = $this->model->calculate($period,$distance,$payment,$minimum)->row();   
+            if ($result){ $rate = intval($result->rate);}
+        }else{ $error = "Invalid JSON Format"; }
+                
+        $response = array('result' => $rate, 'error' => $error); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
     public function getdatatable($search=null,$payment='null')
     {
         if(!$search){ $result = $this->model->get_last($this->modul['limit'])->result(); }
@@ -37,7 +64,7 @@ class Shiprate extends MX_Controller
         if ($result){
 	foreach($result as $res)
 	{
-	   $output[] = array ($res->id, $res->period, $res->distance, $res->payment_type, idr_format($res->minimum), idr_format($res->rate));
+	   $output[] = array ($res->id, $res->period_start.'-'.$res->period_end, $res->distance_start.'-'.$res->distance_end, $res->payment_type, idr_format($res->minimum), idr_format($res->rate));
 	}
             $this->output
             ->set_status_header(200)
@@ -169,11 +196,9 @@ class Shiprate extends MX_Controller
         $this->form_validation->set_rules('trate', 'Rate', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
-        {
-            $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
-            $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
-            
-            $shiprate = array('period' => $time, 'distance' => $distance,
+        {   
+            $shiprate = array('period_start' => $this->input->post('ctime1'), 'period_end' => $this->input->post('ctime2'), 
+                              'distance_start' => $this->input->post('tdistance1'), 'distance_end' => $this->input->post('tdistance2'),
                               'payment_type' => $this->input->post('cpayment'),
                               'minimum' => $this->input->post('tminimum'),
                               'rate' => $this->input->post('trate'),
@@ -193,7 +218,7 @@ class Shiprate extends MX_Controller
         $shiprate = $this->model->get_by_id($uid)->row();
         $this->session->set_userdata('langid', $uid);    
         
-        echo $shiprate->id.'|'.$shiprate->period.'|'.$shiprate->distance.'|'.$shiprate->payment_type.'|'.$shiprate->minimum.'|'.$shiprate->rate;
+        echo $shiprate->id.'|'.$shiprate->period_start.'|'.$shiprate->period_end.'|'.$shiprate->distance_start.'|'.$shiprate->distance_end.'|'.$shiprate->payment_type.'|'.$shiprate->minimum.'|'.$shiprate->rate;
     }    
 
     public function valid_distance($val)
@@ -214,7 +239,7 @@ class Shiprate extends MX_Controller
         $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
         $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
         
-        if ( $this->model->valid_delivery($time,$distance, $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE )
+        if ( $this->model->valid_delivery($this->input->post('ctime1'), $this->input->post('ctime2'), $this->input->post('tdistance1'), $this->input->post('tdistance2'), $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE )
         {
             $this->form_validation->set_message('valid_delivery', "Delivery Rules Already Registered.!");
             return FALSE;
@@ -225,10 +250,8 @@ class Shiprate extends MX_Controller
     public function validating_delivery($val)
     {
         $id = $this->session->userdata('langid');
-        $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
-        $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
         
-        if ($this->model->validating_delivery($id,$time,$distance, $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE)
+        if ($this->model->validating_delivery($id,$this->input->post('ctime1'), $this->input->post('ctime2'), $this->input->post('tdistance1'), $this->input->post('tdistance2'), $this->input->post('cpayment'), $this->input->post('tminimum')) == FALSE)
         {
             $this->form_validation->set_message('validating_delivery', "This $this->title is already registered.!");
             return FALSE;
@@ -252,10 +275,8 @@ class Shiprate extends MX_Controller
         
         if ($this->form_validation->run($this) == TRUE)
         {
-            $time = $this->input->post('ctime1').'-'.$this->input->post('ctime2');
-            $distance = $this->input->post('tdistance1').'-'.$this->input->post('tdistance2');
-            
-            $shiprate = array('period' => $time, 'distance' => $distance,
+            $shiprate = array('period_start' => $this->input->post('ctime1'), 'period_end' => $this->input->post('ctime2'), 
+                              'distance_start' => $this->input->post('tdistance1'), 'distance_end' => $this->input->post('tdistance2'),
                               'payment_type' => $this->input->post('cpayment'),
                               'minimum' => $this->input->post('tminimum'),
                               'rate' => $this->input->post('trate'));

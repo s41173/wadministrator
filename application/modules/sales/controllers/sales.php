@@ -19,20 +19,13 @@ class Sales extends MX_Controller
         $this->currency = new Currency_lib();
         $this->sales = new Product_lib();
         $this->customer = new Customer_lib();
-        $this->payment = new Payment_lib();
-        $this->city = new City_lib();
         $this->product = new Product_lib();
         $this->shipping = new Shipping_lib();
         $this->bank = new Bank_lib();
         $this->category = new Categoryproduct_lib();
-        $this->agent = new Agent_lib();
-        $this->pmodel = new Model_lib();
         $this->shiprate = new Shiprate_lib();
-        $this->sales_payment = new Sales_payment_lib();
         $this->sms = new Sms_lib();
-        $this->material = new Material_lib();
         $this->discount = new Discount_lib();
-        $this->color = new Color_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
@@ -48,11 +41,6 @@ class Sales extends MX_Controller
        $this->session->unset_userdata('start'); 
        $this->session->unset_userdata('end');
        $this->get_last(); 
-    }
-    
-    private function test_sms(){
-        $result = $this->sms->sending_messabot('082277014410',"Hello From System Baru Lagi");
-        if ($result == TRUE){ echo 'berhasil'; }else{ echo 'gagal'; }
     }
         
     // function untuk memeriksa input user dari form sebagai admin
@@ -92,101 +80,6 @@ class Sales extends MX_Controller
       if (isset($param->qty) && isset($param->tax) && isset($param->price) && isset($param->width) && isset($param->height) && isset($param->fixed_top) &&
           isset($param->fixed_bot) && isset($param->color) && isset($param->glasstype) && isset($param->glass_id) && isset($param->frame) &&  isset($param->description))
       { return TRUE; }else{ return FALSE; }
-    }
-    
-    // get weight based shopping cart
-    function get_weight()
-    {  
-        $datax = (array)json_decode(file_get_contents('php://input'));         
-        
-        $cart = new Cart_lib();
-        $agent = $datax['agent_id'];
-        $result = true;
-        $error = null;
-        $totweight = 0;
-        
-        $results = $cart->get_by_agent($agent)->result();
-        
-          foreach($results as $res){
-              
-              if ($this->product->valid_product($res->product_id)){
-                  
-                $qty = intval($res->qty);
-                $dimension = explode('|', $res->attribute);
-                                
-                $model = $this->product->get_detail_based_id($res->product_id);
-                
-                // get weight
-                $keliling = intval($dimension[0]*2) + intval($dimension[1]*2);
-                $weight = intval(intval($model->weight)*$keliling);
-                $weight = intval($qty*$weight);
-                
-                // get weight kaca
-                $weightglass = $this->material->get_glass_weight($dimension[0],$dimension[1],$dimension[6]);
-                $weightglass = intval($weightglass*$qty);
-                $totweight = floatval($totweight+$weight+$weightglass);
-                $margin = intval(0.1*$totweight);
-                $totweight = $totweight+$margin;
-                
-              }else { $result = false; $error = 'Invalid Product'; break; }
-          }
-        
-        $status = array('result' => $result, 'error' => $error, 'weight' => $totweight);
-        $response['status'] = $status;
-            
-        $this->output
-            ->set_status_header(200)
-            ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
-            ->_display();
-            exit;  
-    }
-    
-    // get weight based orderid
-    function get_weight_order()
-    {  
-        $datax = (array)json_decode(file_get_contents('php://input'));         
-        
-        $uid = $this->Sales_model->get_id_based_order($datax['orderid']);
-        $result = true;
-        $error = null;
-        $totweight = 0;
-        
-        $results = $this->sitem->get_last_item($uid)->result();
-        
-          foreach($results as $res){
-              
-              if ($this->product->valid_product($res->product_id)){
-                  
-                $qty = intval($res->qty);
-                $dimension = explode('|', $res->attribute);
-                                
-                $model = $this->product->get_detail_based_id($res->product_id);
-                
-                // get weight
-                $keliling = intval($dimension[0]*2) + intval($dimension[1]*2);
-                $weight = intval(intval($model->weight)*$keliling);
-                $weight = intval($qty*$weight);
-                
-                // get weight kaca
-                $weightglass = $this->material->get_glass_weight($dimension[0],$dimension[1],$dimension[6]);
-                $weightglass = intval($weightglass*$qty);
-                $totweight = floatval($totweight+$weight+$weightglass);
-                $margin = intval(0.1*$totweight);
-                $totweight = $totweight+$margin;
-                
-              }else { $result = false; $error = 'Invalid Product'; break; }
-          }
-        
-        $status = array('result' => $result, 'error' => $error, 'weight' => $totweight);
-        $response['status'] = $status;
-            
-        $this->output
-            ->set_status_header(200)
-            ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
-            ->_display();
-            exit;  
     }
     
     private function set_discount($orderid){
@@ -255,70 +148,6 @@ class Sales extends MX_Controller
               }else { $result = false; $error = 'Invalid JSON Format'; break; }
           }
           
-          // add shipping
-          if ($result == true){ $this->shipping_json($datax); }
-          
-          // get discount status
-          $this->set_discount($orderid);
-          
-        }
-        else{ $result = false; $error = 'Invalid Orderid'; }
-        
-        $status = array('result' => $result, 'error' => $error);
-        $response['status'] = $status;
-            
-        $this->output
-            ->set_status_header(200)
-            ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
-            ->_display();
-            exit;  
-    }
-    
-    function revision_json()
-    {  
-        $datax = (array)json_decode(file_get_contents('php://input'));    
- 
-        $orderid = $datax['status']->orderid;
-        $result = true;
-        $error = null;
-        
-        if ($this->cek_orderid($orderid) == TRUE && $this->valid_confirm($orderid,'code') == TRUE )
-        {  
-            $uid = $this->Sales_model->get_id_based_order($orderid);
-            $transaction = $this->sitem->get_last_item($uid)->result();
-            
-            foreach ($transaction as $res) {
-              
-              if ($this->product->valid_product($res->product_id) == TRUE){
-                                
-                $model = $this->product->get_detail_based_id($res->product_id);
-                $attr = explode('|', $res->attribute);
-                
-                // get weight
-                $keliling = intval($attr[0]*2) + intval($attr[1]*2);
-                $weight = intval($model->weight*$keliling);
-                $weight = intval($res->qty*$weight);
-                $vol = 0;
-                
-                // get weight kaca
-                $weightglass = $this->material->get_glass_weight($attr[0],$attr[1],$attr[6]);
-                $weightglass = intval($res->qty*$weightglass);
-                $totweight = floatval($weight+$weightglass);
-                
-                $margin = intval(0.1*$totweight);
-                $totweight = $totweight+$margin;
-                
-                $attr = $attr[0].'|'.$attr[1].'|'.$attr[2].'|'.$attr[3].'|'.$attr[4].'|'.
-                        $attr[5].'|'.$attr[6].'|'.$attr[7].'|'.$totweight.'|'.$vol;
-                
-                $item = array( 'attribute' => $attr);
-                $this->sitem->update_trans($res->id,$item);
-                
-                $this->update_trans($this->Sales_model->get_id_based_order($orderid));
-              }else { $result = false; $error = 'Invalid JSON Format'; break; }
-          }
-//          
           // add shipping
           if ($result == true){ $this->shipping_json($datax); }
           
@@ -628,43 +457,7 @@ class Sales extends MX_Controller
         
     }
     
-    function json_process()
-    {
-        $datax = (array)json_decode(file_get_contents('php://input')); 
-
-        $username = $datax['user'];
-        $password = $datax['pass'];
-
-            if ($username == 'admin' && $password == 'admin')
-            {
-                $this->mail_invoice(7);
-                $response = array(
-                  'Success' => true,
-		  'User' => $datax['user'],
-                  'Info' => 'Login Success Lah'); 
-            }
-            else
-            {
-                $response = array(
-                'Success' => false,
-                'Info' => 'Invalid Login..!!');
-            }
-            
-        $this->output
-        ->set_status_header(201)
-        ->set_content_type('application/json', 'utf-8')
-        ->set_output(json_encode($response))
-        ->_display();
-        exit;
-
-    }
-    
 //     ============== ajax ===========================
-    
-    function get_district($city=null)
-    {
-       echo $this->shiprate->combo_district($city); 
-    }
     
     function ongkir_nilai()
     {
@@ -704,13 +497,12 @@ class Sales extends MX_Controller
          foreach($result as $res)
 	 {
            $total = intval($res->amount-$res->discount);  
-           $payment = $this->sales_payment->total($res->id);
-           if (floatval($total+$res->shipping-$payment) > 0){ $status = 'C'; }else{ $status = 'S'; }
+           if (floatval($total+$res->shipping) > 0){ $status = 'C'; }else{ $status = 'S'; }
            
            if ($this->shipping->cek_shiping_based_sales($res->id) == true){ $ship = 'Shipped'; }else{ $ship = '-'; } // shipping status
-           
-	   $output[] = array ($res->id, $res->code, tglin($res->dates), $this->customer->get_name($res->cust_id), idr_format(floatval($total+$res->shipping)),
-                              idr_format(floatval($total+$res->shipping-$payment)), $status, $ship, $res->approved, $this->agent->get_name($res->agent_id)
+	   $output[] = array ($res->id, $res->code, tglin($res->dates), timein($res->dates), $this->customer->get_name($res->cust_id), 
+                              idr_format(floatval($total+$res->shipping)),
+                              $status, $ship, $res->approved, $res->redeem
                              );
 	 } 
          
@@ -739,7 +531,6 @@ class Sales extends MX_Controller
         $data['form_action_confirmation'] = site_url($this->title.'/payment_confirmation');
         $data['link'] = array('link_back' => anchor('main/','Back', array('class' => 'btn btn-danger')));
 
-        $data['agent'] = $this->agent->combo();
         $data['bank'] = $this->bank->combo();
         $data['array'] = array('','');
         $data['month'] = combo_month();
@@ -761,7 +552,7 @@ class Sales extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Code', 'Date', 'Agent', 'Customer', 'Total', 'Balance', 'Status', 'Ship-Status', 'Action');
+        $this->table->set_heading('#','No', 'Code', 'Date', 'Customer', 'Total', 'Ship-Status', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url($this->title.'/getdatatable/');
@@ -784,23 +575,53 @@ class Sales extends MX_Controller
         echo json_encode($datax, JSON_NUMERIC_CHECK);
     }
     
+    private function cek_shipping($uid=0){
+        
+       $shipping = $this->shipping->get_detail_based_sales($uid); 
+       if ($shipping){
+           
+           if($shipping->status == 0){ return FALSE; }else{ return TRUE; }
+           
+       }else{ return TRUE; }
+    }
+    
     function publish($uid = null)
     {
        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
        $val = $this->Sales_model->get_by_id($uid)->row();
+       
+       
        if ($val->approved == 0){
            
-           if ($val->amount > 0 && $val->shipping > 0){ 
-              $lng = array('approved' => 1);
-              if ( $this->pdf($uid) == TRUE ){ $mess = 'true|Sales Order Confirmed..!'; }
-              else{ $mess = 'error|Sending Error..!'; }
+           if ($val->amount <= 0){
+               $lng = array('approved' => 0); $mess = 'error|Error Validation Amount..!';
            }
-           else { $lng = array('approved' => 0); $mess = 'error|Error Validation Amount..!'; }
+           elseif($this->cek_shipping($uid) == FALSE ){ $lng = array('approved' => 0); $mess = 'error|Shipping Transaction Not Posted..!'; }
+           else{
+//            $lng = array('approved' => 1);    
+               // send confirmation message to customer
+//              if ( ){ $mess = 'true|Sales Order Confirmed..!'; }
+//              else{ $mess = 'error|Sending Error..!'; }
+           }
        }    
-       else { $lng = array('approved' => 0); $pdf = "./downloads/".$val->code.'.pdf'; @unlink("$pdf"); $mess = 'true|Sales Order Unconfirmed..!'; }
+       else { $lng = array('approved' => 0); $mess = 'true|Sales Order Unconfirmed..!'; }
        
        $this->Sales_model->update($uid,$lng);
        echo $mess;
+       }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
+    }
+    
+    function redeem($uid = null)
+    {
+       if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
+          
+        $val = $this->Sales_model->get_by_id($uid)->row();   
+        if ($val->approved == 1){
+            
+            if ($val->redeem == 0){ $lng = array('redeem' => 1, 'redeem_date' => date('Y-m-d H:i:s')); $this->Sales_model->update($uid,$lng); echo 'true|Status Changed...!'; }
+            else{ echo 'warning|Transaction Already Posted...!'; }
+        }else{ echo 'warning|Transaction Not Posted...!'; }
+             
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
     }
     
@@ -892,13 +713,17 @@ class Sales extends MX_Controller
         if ($this->acl->otentikasi_admin($this->title,'ajax') == TRUE){
             
             $val = $this->Sales_model->get_by_id($uid)->row();
-            $pdf = "./downloads/".$val->code.'.pdf'; @unlink("$pdf");
-            $this->shipping->delete_by_sales($uid);
-            $this->sales_payment->delete_by_sales($uid);
-            $this->Sales_model->delete($uid);
-            $this->session->set_flashdata('message', "1 $this->title successfully removed..!");
-
-            echo "true|1 $this->title successfully removed..!";
+            
+            if ($val->approved == 1){
+                $pdf = "./downloads/".$val->code.'.pdf'; @unlink("$pdf");   
+                $lng = array('redeem' => 0, 'approved' => 0, 'redeem_date' => null); $this->Sales_model->update($uid,$lng);
+                echo "true|1 $this->title successfully rollback..!";
+            }else{
+                $this->shipping->delete_by_sales($uid);
+                $this->Sales_model->delete($uid);
+                echo "true|1 $this->title successfully removed..!";
+            }
+            
         }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
         
     }
@@ -1055,9 +880,6 @@ class Sales extends MX_Controller
 	
         $data['link'] = array('link_back' => anchor($this->title,'Back', array('class' => 'btn btn-danger')));
 
-        $data['agent'] = $this->agent->combo();
-        $data['customer'] = $this->customer->combo();
-        $data['payment'] = $this->payment->combo();
         $data['source'] = site_url($this->title.'/getdatatable');
         $data['graph'] = site_url()."/sales/chart/";
         $data['city'] = $this->shiprate->combo_city_id();
@@ -1114,39 +936,26 @@ class Sales extends MX_Controller
             $data['p_phone']  = $this->properti['phone1'];
             $data['p_email']  = $this->properti['email'];
             $data['p_logo']  = $this->properti['logo'];
-            
-            //agent details
-            $agent = $this->agent->get_by_id($sales->agent_id)->row();
-            $data['a_code'] = strtoupper($agent->code);
-            $data['a_name'] = strtoupper($agent->name);
-            $data['a_phone'] = $agent->phone1.' / '.$agent->phone2;
-            $data['a_address'] = $agent->address;
-            $data['a_city'] = $agent->city;
-            $data['a_zip']  = $agent->zip;
 
             // customer details
             $customer = $this->customer->get_details($sales->cust_id)->row();
             $data['c_name'] = strtoupper($customer->first_name.' '.$customer->last_name);
             $data['c_email'] = $customer->email;
-            $data['c_address'] = $customer->shipping_address;
-            $data['c_phone'] = $customer->phone1.' / '.$customer->phone2;
-            $data['c_city'] = $this->city->get_name($customer->city);
-            $data['c_zip'] = $customer->zip;
+            $data['c_phone'] = $customer->phone1;
 
             // sales
-            $data['so'] = $sales->code.'/'.get_month_romawi(date('m', strtotime($sales->dates))).'/'.date('Y', strtotime($sales->dates));
+            $data['code'] = $sales->code;
             $data['dates'] = tglincomplete($sales->dates);
+            $data['time'] = timein($sales->dates);
 
             $data['total'] = $sales->total;
-            $data['shipping'] = idr_format(floatval($sales->shipping+$sales->cost));
-            $data['tot_amt'] = idr_format(intval($sales->amount+$sales->cost+$sales->shipping));
+            $data['discount'] = idr_format(floatval($sales->discount));
+            $data['shipping'] = idr_format(floatval($sales->shipping));
+            $data['tot_amt'] = idr_format(intval($sales->amount-$sales->discount+$sales->cost+$sales->shipping));
 
-            // weight total
-            $total = $this->sitem->total($param);
-            $data['tax'] = $sales->tax;
-            $data['discount'] = $sales->discount;
-            // bank
-            $data['banks'] = $this->bank->get();
+            // shipping
+            $shippping = $this->shipping->get_detail_based_sales($param);
+            if ($shippping){ $data['destination'] = $shippping->destination; }else{ $data['destination'] = '-'; }
 
             // transaction table
             $data['items'] = $this->sitem->get_last_item($param)->result();
@@ -1184,36 +993,6 @@ class Sales extends MX_Controller
             ->set_output(json_encode($response,128))
             ->_display();
             exit;  
-    }
-    
-    private function pdf($sid=0)
-    {
-        $sales = $this->Sales_model->get_by_id($sid)->row();
-        $no = $sales->code;
-        // ===================== batas ================================
-        // As PDF creation takes a bit of memory, we're saving the created file in /downloads/reports/
-        $pdfFilePath = FCPATH."/downloads/".$no.".pdf";
-        $data['page_title'] = 'Sales Order Invoice - '.$no; // pass data to the view
-
-        if (file_exists($pdfFilePath) == FALSE)
-        {
-          //  ini_set('memory_limit','32M'); 
-            $html = $this->invoice($sid,'html');
-
-            $this->load->library('pdf');
-            $pdf = $this->pdf->load();
-//            $pdf->SetFooter($_SERVER['HTTP_HOST'].'|{PAGENO}|'.date(DATE_RFC822)); 
-            $pdf->WriteHTML($html); // write the HTML into the PDF
-            $pdf->Output($pdfFilePath, 'F'); // save to file because we can
-        }
-        
-        if (file_exists($pdfFilePath) == TRUE){ 
-            
-          if ($this->send_confirmation_email($sid) == TRUE && $this->send_confirmation_sms($sid) == TRUE)
-          { return TRUE; }
-          else { return FALSE; }
-        }
-        else{ return FALSE; }
     }
     
     

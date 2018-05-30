@@ -15,10 +15,12 @@ class Configuration extends MX_Controller
         $this->title = strtolower(get_class($this));
         $this->role = new Role_lib();
         $this->city = new City_lib();
+        $this->period = new Period_lib();
+        $this->period = $this->period->get();
     }
 
     private $properti, $modul, $title;
-    private $role,$city;
+    private $role,$city,$period;
 
     function index()
     {
@@ -35,7 +37,7 @@ class Configuration extends MX_Controller
         $output[] = array ($result->id, $result->name, $result->address, $result->phone1, $result->phone2, $result->email,
                               $result->billing_email, $result->technical_email, $result->cc_email, $result->zip, $result->account_name,
                               $result->account_no, $result->bank, $result->city, $result->site_name, $result->meta_description,
-                              $result->meta_keyword, $result->logo
+                              $result->meta_keyword, $result->logo, $this->period->month, $this->period->year, $this->period->start_month, $this->period->start_year  
                              );
          
         $this->output
@@ -57,10 +59,12 @@ class Configuration extends MX_Controller
         $data['form_action1'] = site_url($this->title.'/update_process/1');
         $data['form_action2'] = site_url($this->title.'/update_process/2');
         $data['form_action3'] = site_url($this->title.'/update_process/3');
+        $data['form_action4'] = site_url($this->title.'/update_process/4');
         $data['link'] = array('link_back' => anchor('main/','Back', array('class' => 'btn btn-danger')));
 
         $data['roles'] = $this->role->combo();
         $data['city'] = $this->city->combo_city_name();
+        $data['cmonth'] = combo_month();
 	// ---------------------------------------- //
  
         $config['first_tag_open'] = $config['last_tag_open']= $config['next_tag_open']= $config['prev_tag_open'] = $config['num_tag_open'] = '<li>';
@@ -124,6 +128,11 @@ class Configuration extends MX_Controller
             $this->form_validation->set_rules('tmetadesc', 'Global Meta Description', '');
             $this->form_validation->set_rules('tmetakey', 'Global Meta Keyword', ''); 
         }
+        elseif ($param == 4)
+        {
+            $this->form_validation->set_rules('tbegin_year', 'Begin Year', 'required|numeric');
+            $this->form_validation->set_rules('tyear', 'Year', 'required|numeric');
+        }
 
 
         if ($this->form_validation->run($this) == TRUE)
@@ -143,6 +152,30 @@ class Configuration extends MX_Controller
             {
                 $property = array( 'bank' => $this->input->post('tbank'), 'account_name' => $this->input->post('taccount_name'), 'account_no' => $this->input->post('taccount_no'));
                 $this->Configuration_model->update(1, $property);
+                echo "true|One $this->title has successfully updated..! ";
+            }
+            elseif ($param == 4)
+            {
+                if ($this->period->status == 1)
+                {
+                    $monthperiod = $this->input->post('cmonth');
+                    $yearperiod = $this->input->post('tyear');
+                    $startmonth = $this->period->start_month;
+                    $startyear = $this->period->start_year;
+                }
+                elseif($this->period->status == 0) 
+                {
+                   $monthperiod = $this->input->post('cmonth');
+                   $yearperiod = $this->input->post('tyear');
+                   $startmonth = $this->input->post('cbegin_month');
+                   $startyear = $this->input->post('tbegin_year');
+                }
+
+                $property = array( 'start_month' => $startmonth, 'start_year' => $startyear,
+                                   'month' => $monthperiod, 'year' => $yearperiod
+                                 );
+                $ps = new Period_lib();
+                $ps->updateid(1, $property);
                 echo "true|One $this->title has successfully updated..! ";
             }
             elseif ($param == 3){

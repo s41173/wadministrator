@@ -74,8 +74,6 @@ $(document).ready(function (e) {
 		var del_id = element.attr("id");
 		var url = sites_confirmation +"/"+ del_id;
 		$(".error").fadeOut();
-		
-		$("#myModal").modal('show');
 
 		// batas
 		$.ajax({
@@ -86,15 +84,16 @@ $(document).ready(function (e) {
 			success: function(result) {
 				
 				res = result.split("|");
-				
-				console.log(res[2]);
-
-			    $('#cstts').val(res[1]);
-				$('#dtime1').val(res[2]);
-				$('#tairway').val(res[3]);
+				if (res[0] == "true")
+				{   
+			        error_mess(1,res[1],0);
+					load_data();
+				}
+				else if (res[0] == 'warning'){ error_mess(2,res[1],0); }
+				else{ error_mess(3,res[1],0); }
 			}
 		})
-		return false;	
+		return false;
 	});
 	
 	// fungsi jquery update
@@ -114,17 +113,19 @@ $(document).ready(function (e) {
     	    cache: false,
 			headers: { "cache-control": "no-cache" },
 			success: function(result) {
-				
 				res = result.split("|");
 
 				$('#tid_update').val(res[0]);
-			    $('#tsales').val(res[8]);
-			    $('#tsales_date').val(res[2]);
-			    $('#tcourier').val(res[3]);
-			    $('#tpackage').val(res[4]);
-			    $('#tdesc').val(res[6]);
+				$('#tsid_update').val(res[1]);
+			    $('#tsales_update').val(res[2]);
+			    $('#tsales_date').val(res[3]);
+			    $('#ccourier').val(res[4]).change();
+				$('#tcoordinate').val(res[5]);
+				$('#tdistance').val(res[6]);
 				$('#taddress').val(res[7]);
-				$('#tdistrict').val(res[9]);
+				$('#tamount').val(res[8]);
+				$('#tstatus').val(res[9]);
+				$('#tsalesstatus').val(res[10]);
 			}
 		})
 		return false;	
@@ -367,11 +368,12 @@ $(document).ready(function (e) {
 
 	$('#searchform').submit(function() {
 		
-		var cust = $("#ccustomer_search").val();
-		var paid = $("#cpaid").val();
+		var cust = $("#ccust").val();
+		var sales = $("#tsales").val();
 		var ship = $("#cship").val();
-		var param = ['searching',cust,paid,ship];
-		
+		var received = $("#creceived").val();
+		var param = ['searching',cust,sales,ship,received];
+
 		$.ajax({
 			type: 'POST',
 			url: $(this).attr('action'),
@@ -384,6 +386,7 @@ $(document).ready(function (e) {
 				if (!param[1]){ param[1] = 'null'; }
 				if (!param[2]){ param[2] = 'null'; }
 				if (!param[3]){ param[3] = 'null'; }
+				if (!param[4]){ param[4] = 'null'; }
 				load_data_search(param);
 			}
 		});
@@ -404,12 +407,11 @@ $(document).ready(function (e) {
 			
 			var oTable = $('#datatable-buttons').dataTable();
 			var stts = 'btn btn-danger';
-			
-				console.log(source+"/"+search[0]+"/"+search[1]+"/"+search[2]+"/"+search[3]);
+			var received = 'btn btn-danger';
 			
 		    $.ajax({
 				type : 'GET',
-				url: source+"/"+search[0]+"/"+search[1]+"/"+search[2]+"/"+search[3],
+				url: source+"/"+search[0]+"/"+search[1]+"/"+search[2]+"/"+search[3]+"/"+search[4],
 				//force to handle it as text
 				contentType: "application/json",
 				dataType: "json",
@@ -421,26 +423,26 @@ $(document).ready(function (e) {
 	
 		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
 							
-						  for(var i = 0; i < s.length; i++) {
-						  if (s[i][12] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
-						  oTable.fnAddData([
+		 for(var i = 0; i < s.length; i++) {
+			if (s[i][9] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+			if (s[i][7] == null){ received = 'btn btn-danger'; }else { received = 'btn btn-success'; }
+			oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
-										i+1,
-										s[i][1]+'<br>'+s[i][2],
-										s[i][3],
-										s[i][4],
-										s[i][5]+'<br> <b>'+s[i][6]+'</b>',
-										s[i][11],
+						  i+1,
+						  s[i][1]+'<br>'+s[i][2],
+						  s[i][3],
+						  s[i][4],
+						  s[i][5]+'<br> <b>'+s[i][6]+' km </b>',
+						  s[i][8],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Confirmation Status"> <i class="fa fa-power-off"> </i> </a> '+
 '<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
-'<a href="" class="btn btn-default btn-xs text-confirmation" id="' +s[i][0]+ '" title="Shipping Confirmation"> <i class="fa fa-truck"> </i> </a> '+
-'<a href="" class="btn btn-default btn-xs text-payment" id="' +s[i][0]+ '" title="Payment Confirmation"> <i class="fa fa-credit-card"> </i> </a> '+
-'<a href="" class="btn btn-warning btn-xs text-email" id="' +s[i][0]+ '" title="Send Invoice"> <i class="fa fa-envelope"> </i> </a> '+
+'<a href="" class="'+received+' btn-xs text-confirmation" id="' +s[i][0]+ '" title="Deliver Status"> <i class="fa fa-truck"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
+'<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
-										    ]);										
-											} // End For 
+							  ]);										
+							  } // End For 
 											
 				},
 				error: function(e){
@@ -461,6 +463,7 @@ $(document).ready(function (e) {
 			
 			var oTable = $('#datatable-buttons').dataTable();
 			var stts = 'btn btn-danger';
+			var received = 'btn btn-danger';
 			
 		    $.ajax({
 				type : 'GET',
@@ -478,22 +481,22 @@ $(document).ready(function (e) {
 		$("#chkbox").append('<input type="checkbox" name="newsletter" value="accept1" onclick="cekall('+s.length+')" id="chkselect" class="chkselect">');
 							
 							for(var i = 0; i < s.length; i++) {
-						  if (s[i][12] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+						  if (s[i][9] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
+						  if (s[i][7] == null){ received = 'btn btn-danger'; }else { received = 'btn btn-success'; }
 						  oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 										i+1,
 										s[i][1]+'<br>'+s[i][2],
 										s[i][3],
 										s[i][4],
-										s[i][5]+'<br> <b>'+s[i][6]+'</b>',
-										s[i][11],
+										s[i][5]+'<br> <b>'+s[i][6]+' km </b>',
+										s[i][8],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Confirmation Status"> <i class="fa fa-power-off"> </i> </a> '+
 '<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
-'<a href="" class="btn btn-default btn-xs text-confirmation" id="' +s[i][0]+ '" title="Shipping Confirmation"> <i class="fa fa-truck"> </i> </a> '+
-'<a href="" class="btn btn-default btn-xs text-payment" id="' +s[i][0]+ '" title="Payment Confirmation"> <i class="fa fa-credit-card"> </i> </a> '+
-'<a href="" class="btn btn-warning btn-xs text-email" id="' +s[i][0]+ '" title="Send Invoice"> <i class="fa fa-envelope"> </i> </a> '+
+'<a href="" class="'+received+' btn-xs text-confirmation" id="' +s[i][0]+ '" title="Deliver Status"> <i class="fa fa-truck"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
+'<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
 										    ]);										
 											} // End For 

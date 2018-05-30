@@ -21,7 +21,7 @@
 </div>
 <div class="x_content">
 
-<form id="xupload_form" data-parsley-validate class="form-horizontal form-label-left" method="POST" action="<?php echo $form_action; ?>" 
+<form id="upload_form" data-parsley-validate class="form-horizontal form-label-left" method="POST" action="<?php echo $form_action; ?>" 
       enctype="multipart/form-data">
      
     <div class="form-group">
@@ -37,6 +37,13 @@
               
               <?php $js = "class='select2_single form-control' id='cparent' tabindex='-1' style='width:100%;' "; 
 			        echo form_dropdown('cparent', $parent, isset($default['parent']) ? $default['parent'] : '', $js); ?>
+          </div>
+      </div>
+      
+      <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Order <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+              <input type="number" name="torder" class="form-control" style="width:65px;" maxlength="2" value="0">
           </div>
       </div>
 

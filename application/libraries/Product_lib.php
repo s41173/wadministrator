@@ -8,11 +8,9 @@ class Product_lib extends Custom_Model {
         $this->tableName = 'product';
     }
 
-    protected $field = array('id', 'sku', 'category', 'assembly', 'name', 'model', 'description', 
-                             'bone', 'daun', 'daunhidup', 'kacamati', 'weight',
-                             'kacamati_bawah', 'tulang_daun', 'panel',
-                             'image', 'color', 'url1', 'url2', 'url3', 'url4', 'url5', 'url6', 'flat_price', 'publish',
-                             'created', 'updated', 'deleted');
+    protected $field = array('id', 'sku', 'category', 'name', 'description', 'image', 'url_type', 'url1', 'url2', 'url3',
+                             'url4', 'url5', 'url6', 'capital', 'price', 'supplier', 'restricted', 'qty', 'start', 'end',
+                             'recommended', 'orders', 'publish', 'created', 'updated', 'deleted');
 
     function cek_relation($id,$type)
     {
@@ -70,29 +68,7 @@ class Product_lib extends Custom_Model {
            return @$res->sku;
         }
     }
-    
-    function get_model($id=null)
-    {
-        if ($id)
-        {
-           $this->db->select($this->field);
-           $this->db->where('id', $id);
-           $res = $this->db->get('product')->row();
-           return $res->model;
-        }
-    }
-    
-    function get_bone($id=null)
-    {
-        if ($id)
-        {
-           $this->db->select($this->field);
-           $this->db->where('id', $id);
-           $res = $this->db->get('product')->row();
-           return $res->bone;
-        }
-    }
-    
+      
     function get_detail_based_id($id=null)
     {
         if ($id)
@@ -103,29 +79,7 @@ class Product_lib extends Custom_Model {
            return $res;
         }
     }
-    
-    function get_weight($id=null)
-    {
-        if ($id)
-        {
-           $this->db->select($this->field);
-           $this->db->where('id', $id);
-           $res = $this->db->get('product')->row();
-           return $res->weight;
-        }
-    }
-
-    function get_unit($id=null)
-    {
-        if ($id)
-        {
-           $this->db->select($this->field);
-           $this->db->where('id', $id);
-           $res = $this->db->get('product')->row();
-           return $res->unit;
-        }
-    }
-
+  
     function get_all()
     {
       $this->db->select($this->field);
@@ -168,23 +122,25 @@ class Product_lib extends Custom_Model {
     
     // api purpose
     
-    function get_series_based_cat($catid){
-        
-        $this->db->select('model');
-        $this->db->where('deleted', $this->deleted);
-        $this->db->where('publish', 1);
-        $this->db->where('category', $catid);
-        $this->db->distinct();
-        return $this->db->get($this->tableName)->result();
-    }
-    
-    function get_poduct_based_cat_model($catid,$model){
+    function get_poduct_based_cat($catid,$limit=100){
         
         $this->db->select($this->field);
         $this->db->where('deleted', $this->deleted);
         $this->db->where('publish', 1);
         $this->db->where('category', $catid);
-        $this->db->where('model', $model);
+        $this->db->order_by('orders', 'asc'); 
+        $this->db->limit($limit);
+        return $this->db->get($this->tableName)->result();
+    }
+    
+    function get_recommended($limit=100){
+        
+        $this->db->select($this->field);
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('publish', 1);
+        $this->db->where('recommended', 1);
+        $this->db->order_by('orders', 'asc'); 
+        $this->db->limit($limit);
         return $this->db->get($this->tableName)->result();
     }
 

@@ -38,6 +38,7 @@ $(document).ready(function (e) {
 				$("#tname_update").val(res[1]);
 				$('#cparent_update').val(res[2]).change();
 				$("#catimg_update").attr("src",res[3]);
+				$("#torder_update").val(res[4]);
 			}
 		})
 		return false;	
@@ -116,6 +117,7 @@ $(document).ready(function (e) {
 										i+1,
 										s[i][1],
 										s[i][2],
+										s[i][5],
 '<div class="btn-group" role"group">'+
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Primary Status"> <i class="fa fa-power-off"> </i> </a>'+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a>'+

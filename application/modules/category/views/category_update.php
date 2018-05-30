@@ -31,6 +31,13 @@
 			   ?>
           </div>
       </div>
+      
+       <div class="form-group">
+          <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Order <span class="required">*</span></label>
+          <div class="col-md-6 col-sm-6 col-xs-12">
+<input type="number" name="torder" id="torder_update" class="form-control" style="width:65px;" maxlength="2" value="0">
+          </div>
+      </div>
 
       <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Image </label>

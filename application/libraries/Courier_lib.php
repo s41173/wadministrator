@@ -50,13 +50,13 @@ class Courier_lib extends Main_model {
     
     function combo()
     {
-        $this->db->select('id,first_name,last_name');
+        $this->db->select($this->field);
         $this->db->where('deleted', NULL);
-        $this->db->order_by('first_name', 'asc');
+        $this->db->order_by('name', 'asc');
         $val = $this->db->get($this->tableName)->result();
         $data = null;
         if ($val){
-          foreach($val as $row){ $data['options'][$row->id] = ucfirst($row->first_name.' '.$row->last_name); }    
+          foreach($val as $row){ $data['options'][$row->id] = ucfirst($row->name); }    
         }else{ $data['options'][''] = '--'; }
         return $data;
     }

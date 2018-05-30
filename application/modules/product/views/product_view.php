@@ -40,6 +40,7 @@
 	var sites_get  = "<?php echo site_url('product/update/');?>";
     var sites_assembly  = "<?php echo site_url('product/assembly/');?>";
     var sites_primary  = "<?php echo site_url('product/publish/');?>";
+    var sites_recomend  = "<?php echo site_url('product/recomend/');?>";
 	var sites_attribute  = "<?php echo site_url('product/attribute/');?>";
 	var sites_image  = "<?php echo site_url('product/image_gallery/');?>";
     var sites_calculator  = "<?php echo site_url('product/get_pro_name/');?>";
