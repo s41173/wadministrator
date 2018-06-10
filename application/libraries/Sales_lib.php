@@ -59,6 +59,18 @@ class Sales_lib extends Custom_Model {
         return $this->db->get('sales_item')->row_array();
     }
     
+    function total_based_date($date=null,$pid=0){
+       
+        $this->db->select_sum('sales_item.qty');
+        $this->db->from('sales, sales_item');
+        $this->db->where('sales.id = sales_item.sales_id');
+        $this->db->where('DATE(sales.dates)',$date);
+        $this->db->where('sales_item.product_id', $pid);
+        $this->db->where('sales.approved', 1);
+        $this->db->where('sales.canceled', null);
+        return $this->db->get()->row_array();
+    }
+    
     function cek_shiping_based_sales($sid)
     {
        if ($sid)
@@ -68,8 +80,7 @@ class Sales_lib extends Custom_Model {
            $res = $this->db->get($this->tableName)->row();
            if ($res){
               if ($res->shipdate){ return true; }else{ return false; } 
-           }
-           
+           } 
         } 
     }
     

@@ -265,23 +265,19 @@ class Discount extends MX_Controller
 
 	// Form validation
         $this->form_validation->set_rules('tname', 'Name', 'required|callback_validation_discount['.$this->input->post('tend').']');
-        $this->form_validation->set_rules('cagent', 'Material', 'required');
         $this->form_validation->set_rules('ctype', 'Type', 'required');
         $this->form_validation->set_rules('tminorder', 'Min Order', 'required|numeric');
         $this->form_validation->set_rules('tpercent', 'Percentage Value', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
-        {
+        {   
             $model = array('name' => strtoupper($this->input->post('tname')),
                            'start' => $this->input->post('tstart'), 'end' => $this->input->post('tend'),
                            'type' => $this->input->post('ctype'),
                            'minimum' => $this->input->post('tminorder'),
-                           'percentage' => $this->input->post('tpercent'),
-                           'agent' => split_array($this->input->post('cagent')));
+                           'percentage' => $this->input->post('tpercent'));
             
-	    $this->model->update($this->session->userdata('langid'), $model);
-            $this->session->set_flashdata('message', "One $this->title has successfully updated!");
-            
+	    $this->model->update($this->session->userdata('langid'), $model);            
             echo "true|One $this->title has successfully updated!";
         }
         else{ echo 'error|'.validation_errors(); }

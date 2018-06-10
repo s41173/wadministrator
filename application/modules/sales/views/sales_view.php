@@ -41,8 +41,10 @@
     var sites_print_invoice  = "<?php echo site_url('sales/invoice/');?>";
     var sites_primary   = "<?php echo site_url('sales/publish/');?>";
     var sites_redeem    = "<?php echo site_url('sales/redeem/');?>";
+    var sites_cancel    = "<?php echo site_url('sales/cancel/');?>";
+    var sites_cleaning    = "<?php echo site_url('sales/cleaning/');?>";
 	var sites_attribute = "<?php echo site_url('sales/attribute/');?>";
-    var sites_commision = "<?php echo site_url('commision/get_last/');?>";
+    var sites_ajax_product = "<?php echo site_url('product/get_price/');?>";
 	var source = "<?php echo $source;?>";
     
     var url  = "<?php echo $graph;?>";
@@ -190,6 +192,7 @@ $atts1 = array(
            <button type="submit" class="btn btn-primary button_inline"> Filter </button>
            <button type="reset" onClick="" class="btn btn-success button_inline"> Clear </button>
            <button type="button" onClick="load_data();" class="btn btn-danger button_inline"> Reset </button>
+           <button type="button" id="bcleaning" class="btn btn-warning button_inline"> Cleaning </button>
           </div>
           </form> <br>
 

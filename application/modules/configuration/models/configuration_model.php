@@ -15,7 +15,7 @@ class Configuration_model extends Custom_Model
     
     
     protected $table = 'property';
-    protected $field = array('id' ,'name', 'address', 'phone1', 'phone2', 'email', 'billing_email', 'technical_email',
+    protected $field = array('id' ,'name', 'address', 'coordinate', 'phone1', 'phone2', 'email', 'billing_email', 'technical_email',
                              'cc_email', 'zip', 'account_name', 'account_no', 'bank', 'city', 'site_name',
                              'meta_description', 'meta_keyword', 'logo');
     protected $com;

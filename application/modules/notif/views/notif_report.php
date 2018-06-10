@@ -66,19 +66,12 @@
                     datafields:
                     [
                         { name: "No", type: "string" },
-						{ name: "Code", type: "string" },
-						{ name: "Date", type: "string" },
 						{ name: "Customer", type: "string" },
-                        { name: "Payment Type", type: "string" },
-						{ name: "Total", type: "number" },
-                        { name: "Tax", type: "number" },
-                        { name: "Cost", type: "number" },
-                        { name: "Shipping", type: "number" },
-                        { name: "Discount", type: "number" },
-                        { name: "Amount", type: "number" },
-                        { name: "Confirmation", type: "string" },
-                        { name: "Redeem", type: "string" },
-                        { name: "Canceled", type: "string" }
+						{ name: "Content", type: "string" },
+						{ name: "Type", type: "string" },
+                        { name: "Read", type: "string" },
+                        { name: "Status", type: "string" },
+                        { name: "Created", type: "string" }
                     ]
                 };
 			
@@ -102,20 +95,12 @@
 				autoshowfiltericon: false,
                 columns: [
                   { text: 'No', dataField: 'No', width: 50 },
-				  { text: 'Code', dataField: 'Code', width : 100 },
-				  { text: 'Date', dataField: 'Date', width : 150 },
-				  { text: 'Customer', dataField: 'Customer', width : 250 },
-                  { text: 'Payment Type', dataField: 'Payment Type', width : 170 },
-    { text: 'Total', dataField: 'Total', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Tax', datafield: 'Tax', width: 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Cost', dataField: 'Cost', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Shipping', dataField: 'Shipping', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Discount', dataField: 'Discount', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    { text: 'Amount', dataField: 'Amount', width : 150, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
-    
-                  { text: 'Confirmation', dataField: 'Confirmation', width : 100 },
-                  { text: 'Redeem', dataField: 'Redeem', width : 120 },
-                  { text: 'Canceled', dataField: 'Canceled', width : 120 }
+				  { text: 'Customer', dataField: 'Customer' },
+  				  { text: 'Content', dataField: 'Content', width : 350 },
+                  { text: 'Type', dataField: 'Type', width : 300 },
+                  { text: 'Read', dataField: 'Read', width : 100 },
+                  { text: 'Status', dataField: 'Status', width : 100 },
+                  { text: 'Created', dataField: 'Created', width : 150 }
                 ]
             });
 			
@@ -124,32 +109,13 @@
 			$("#bexport").click(function() {
 				
 				var type = $("#crtype").val();	
-				if (type == 0){ $("#jqxgrid").jqxGrid('exportdata', 'html', 'Sales-Summary'); }
-				else if (type == 1){ $("#jqxgrid").jqxGrid('exportdata', 'xls', 'Sales-Summary'); }
-				else if (type == 2){ $("#jqxgrid").jqxGrid('exportdata', 'pdf', 'Sales-Summary'); }
-				else if (type == 3){ $("#jqxgrid").jqxGrid('exportdata', 'csv', 'Sales-Summary'); }
+				if (type == 0){ $("#jqxgrid").jqxGrid('exportdata', 'html', 'Notif-Summary'); }
+				else if (type == 1){ $("#jqxgrid").jqxGrid('exportdata', 'xls', 'Notif-Summary'); }
+				else if (type == 2){ $("#jqxgrid").jqxGrid('exportdata', 'pdf', 'Notif-Summary'); }
+				else if (type == 3){ $("#jqxgrid").jqxGrid('exportdata', 'csv', 'Notif-Summary'); }
 			});
 			
-//			$('#jqxgrid').on('celldoubleclick', function (event) {
-//     	  		var col = args.datafield;
-//				var value = args.value;
-//				var res;
-//			
-//				if (col == 'Sales No')
-//				{ 			
-//				   res = value.split("SO-0");
-//				   openwindow(res[1]);
-//				}
-// 			});
-//			
-//			function openwindow(val)
-//			{
-//				var site = "<?php //echo site_url('sales_payment/get_last/');?>";
-//				window.open(site+"/"+val, "", "width=800, height=600"); 
-//				//alert(site+"/"+val);
-//			}
-			
-     	    $("#table").hide();
+			$("#table").hide();
 			
 		// end jquery	
         });
@@ -162,7 +128,6 @@
 	
 	<div style="border:0px solid red; float:left;">
 		<table border="0">
-			<tr> <td> Period </td> <td> : </td> <td> <?php echo $start.' - '.$end; ?> </td> </tr>
 			<tr> <td> Run Date </td> <td> : </td> <td> <?php echo $rundate; ?> </td> </tr>
 			<tr> <td> Log </td> <td> : </td> <td> <?php echo $log; ?> </td> </tr>
 		</table>
@@ -170,7 +135,7 @@
 
 	<center>
 	   <div style="border:0px solid green; width:230px;">	
-	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Sales Report </h4>
+	       <h4> <?php echo isset($company) ? $company : ''; ?> <br> Notif Report </h4>
 	   </div>
 	</center>
 	
@@ -197,23 +162,25 @@
 		<table id="table" border="0" width="100%">
 		   <thead>
            <tr>
-<th> No </th> <th> Code </th> <th> Date </th> <th> Customer </th> <th> Payment Type </th> <th> Total </th> <th> Tax </th>
-<th> Cost </th> <th> Shipping </th> <th> Discount </th> <th> Amount </th> <th> Confirmation </th> <th> Redeem </th> 
-<th> Canceled </th>
-           </tr>
+<th> No </th> <th> Customer </th> <th> Content </th> <th> Type </th> <th> Read </th> <th> Status </th> <th> Created </th>
+		   </tr>
            </thead>
 		  
           <tbody> 
 		  <?php 
-              
-              function customer($val)
-              {
-                  $res = new Customer_lib(); 
-                  return strtoupper($res->get_name($val));
+		      
+			  function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }	
+              function customer($val){
+                  $res = new Customer_lib();
+                  return $res->get_name($val);
               }
-               
-              function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }
-			  		  
+              
+              function type($val){
+                  $res = new Notif_lib();
+                  return $res->get_type($val);
+              }
+              
+              
 		      $i=1; 
 			  if ($reports)
 			  {
@@ -222,19 +189,12 @@
 				   echo " 
 				   <tr> 
 				       <td class=\"strongs\">".$i."</td> 
-                       <td class=\"strongs\">".$res->code."</td> 
-                       <td class=\"strongs\">".tglin($res->dates)."</td> 
-                       <td class=\"strongs\">".customer($res->cust_id)."</td>
-                       <td class=\"strongs\">".$res->payment_type."</td>
-                       <td class=\"strongs\">".$res->total."</td>
-                       <td class=\"strongs\">".$res->tax."</td>
-                       <td class=\"strongs\">".$res->cost."</td>
-                       <td class=\"strongs\">".$res->shipping."</td>
-                       <td class=\"strongs\">".$res->discount."</td>
-                       <td class=\"strongs\">".floatval($res->amount+$res->cost+$res->shipping-$res->discount)."</td>
-                       <td class=\"strongs\">".pstatus($res->approved)."</td>
-                       <td class=\"strongs\">".$res->redeem_date."</td>
-                       <td class=\"strongs\">".$res->canceled."</td>
+					   <td class=\"strongs\">".customer($res->customer)."</td>
+                       <td class=\"strongs\">".$res->content."</td>
+                       <td class=\"strongs\">".type($res->type)."</td>
+                       <td class=\"strongs\">".pstatus($res->reading)."</td>
+                       <td class=\"strongs\">".pstatus($res->status)."</td>
+                       <td class=\"strongs\">".tglin($res->created)."</td>
 				   </tr>";
 				   $i++;
 				}
@@ -245,12 +205,11 @@
         
         </div>
         
-        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('sales'); ?>"> 
+        <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('notif'); ?>"> 
           <img src="<?php echo base_url().'images/back.png'; ?>"> 
         </a>
-        
+    
 	</div>
-	
 
 </body>
 </html>

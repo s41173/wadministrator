@@ -14,7 +14,7 @@ class Sales_model extends Custom_Model
     }
     
     protected $field = array('id', 'code', 'dates', 'cust_id', 'amount', 'tax', 'cost', 'discount', 'total', 'shipping',                            
-                             'payment_type', 'redeem', 'redeem_date', 'approved', 'log', 'created', 'updated', 'deleted');
+                             'payment_type', 'redeem', 'redeem_date', 'canceled', 'approved', 'log', 'created', 'updated', 'deleted');
     protected $com;
     
     function get_last($limit, $offset=null)
@@ -57,7 +57,7 @@ class Sales_model extends Custom_Model
         $this->db->where('deleted', $this->deleted);
         $this->between('dates', $start, $end);
         
-        $this->db->where('approved', 1);
+//        $this->db->where('approved', 1);
         $this->db->order_by('dates', 'desc'); 
         return $this->db->get(); 
     }
@@ -94,6 +94,27 @@ class Sales_model extends Custom_Model
         
         $this->db->where('code', $orderid);
         return $this->db->get($this->tableName);
+    }
+    
+    function cleaning(){
+        
+        $val = array('deleted' => date('Y-m-d H:i:s'));
+        $this->db->where('dates <>', date('Y-m-d'));
+        $this->db->where('approved', 0);
+        $this->db->where('canceled', null);
+        $this->db->where('deleted', $this->deleted);
+        $this->db->update($this->tableName, $val);
+    }
+    
+    function valid_pending_order($cust){
+        
+        $this->db->where('cust_id', $cust);
+//        $this->db->where('dates', date('Y-m-d'));
+        $this->db->where('approved', 0);
+        $this->db->where('canceled', null);
+        $this->db->where('deleted', $this->deleted);
+        $query = $this->db->get($this->tableName)->num_rows();
+        if ($query > 0){ return FALSE; }else{ return TRUE; }
     }
     
     function get_sales_qty_based_category($cat=0,$month=null,$year=null)

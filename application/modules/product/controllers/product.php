@@ -9,7 +9,7 @@ class Product extends MX_Controller
         $this->load->model('Product_model', '', TRUE);
 
         $this->properti = $this->property->get();
-        $this->acl->otentikasi();
+//        $this->acl->otentikasi();
 
         $this->modul = $this->components->get(strtolower(get_class($this)));
         $this->title = strtolower(get_class($this));
@@ -17,6 +17,11 @@ class Product extends MX_Controller
         $this->category = new Categoryproduct_lib();
         $this->product = new Product_lib();
         $this->supplier = new Supplier_lib();
+        
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
+        
     }
 
     private $properti, $modul, $title, $product, $supplier;
@@ -30,7 +35,78 @@ class Product extends MX_Controller
        $this->get_last(); 
     }
     
+    // =================== API ====================
+        
+    // get product list based category and limit
+    public function get_list($cat,$type=null,$limit=100){
+        
+        $lib = new Product_lib();
+        if ($type != 'recommend'){
+           $result = $lib->get_poduct_based_cat($cat,$limit);    
+        }else{ $result = $lib->get_recommended($limit); }
+        
+        
+        foreach($result as $res){
+            
+            $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name, "order" => $res->orders, "price" => $res->price, "restricted" => $res->restricted, "qty" => $res->qty,  
+                               "image" => base_url().'images/product/'.$res->image);
+        }
+        $response['content'] = $output;
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+    }
+    
+     public function product_detail($pid=0){
+        
+        $lib = new Product_lib();
+        $cat = new Categoryproduct_lib();
+        $model = new Model_lib();
+        
+        $res = $lib->get_detail_based_id($pid);
+        $url1 = null; $url2 = null; $url3 = null; $url4 = null; $url5 = null; $url6 = null;
+        if ($res->url_type == 'UPLOAD'){ $url = base_url().'images/product/'; 
+        
+            if ($res->url1){ $url1 = $url.$res->url1; }
+            if ($res->url2){ $url2 = $url.$res->url2; }
+            if ($res->url3){ $url3 = $url.$res->url3; }
+            if ($res->url4){ $url4 = $url.$res->url4; }
+            if ($res->url5){ $url5 = $url.$res->url5; }
+            if ($res->url6){ $url6 = $url.$res->url6; }
+        
+        }else{
+           $url1 = $res->url1; $url2 = $res->url2; $url3 = $res->url3;
+           $url4 = $res->url4; $url5 = $res->url5; $url6 = $res->url6;
+        }
+        
+        $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name,
+                           "category" => $cat->get_name($res->category),
+                           "image" => base_url().'images/product/'.$res->image,  
+                           "url1" => $url1, "url2" => $url2, "url3" => $url3, "url4" => $url4, 
+                           "url5" => $url5, "url6" => $url6, "price" => $res->price, "restricted" => $res->restricted,
+                           "qty" => $res->qty, "start" => $res->start, "end" => $res->end, "recommended" => $res->recommended, "orders" => $res->orders, 
+                          );
+         
+        $response['content'] = $output;
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+    }
+    
+    // =================== API ====================
+    
     // ============ ajax ==========================
+    
+    function get_price($pid){
+        $product = $this->Product_model->get_by_id($pid)->row();
+        echo $product->price;
+    }
      
     public function getdatatable($search=null,$cat='null',$model='null',$publish='null')
     {

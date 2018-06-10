@@ -28,6 +28,7 @@
 	var sites_edit = "<?php echo site_url('sales/update_process/');?>";
 	var sites_del  = "<?php echo site_url('sales/delete/');?>";
 	var sites_get  = "<?php echo site_url('sales/update/');?>";
+    var sites_ajax_product = "<?php echo site_url('product/get_price/');?>";
     var sites  = "<?php echo site_url('sales');?>";
 	var source = "<?php echo $source;?>";
     var url  = "<?php echo $graph;?>";
@@ -51,12 +52,6 @@
               <!-- xtitle -->
                 
                 <div class="x_content">     
-<!--
-  <div id="errors" class="alert alert-danger alert-dismissible fade in" role="alert"> 
-     <?php // $flashmessage = $this->session->flashdata('message'); ?> 
-	 <?php // echo ! empty($message) ? $message : '' . ! empty($flashmessage) ? $flashmessage : ''; ?> 
-  </div>
--->
   
   <div id="step-1">
     <!-- form -->
@@ -82,23 +77,24 @@
             
            <div class="form-group">
                
-               <div class="col-md-3 col-sm-12 col-xs-12">
-                   <label class="control-label labelx"> * Agent </label>
-
-         <?php $js = "class='select2_single form-control' id='cagent' tabindex='-1' style='min-width:100px;' "; 
-	     echo form_dropdown('cagent', $agent, isset($default['agent']) ? $default['agent'] : '', $js); ?>
-               </div>
                
                <div class="col-md-3 col-sm-12 col-xs-12">
                    <label class="control-label labelx"> * Customer </label>
-
-         <?php $js = "class='select2_single form-control' id='ccustomer' tabindex='-1' style='min-width:100px;' "; 
-	     echo form_dropdown('ccustomer', $customer, isset($default['customer']) ? $default['customer'] : '', $js); ?>
+<input type="email" class="form-control" id="tcustomer" required name="tcustomer" readonly value="<?php echo isset($default['customer']) ? $default['customer'] : '' ?>" >
                </div>
                
                <div class="col-md-3 col-sm-12 col-xs-12">
                    <label class="control-label labelx"> Email </label>
                    <input type="email" class="form-control" id="temail" required name="temail" readonly value="<?php echo isset($default['email']) ? $default['email'] : '' ?>" >
+               </div>
+               
+               <div class="col-md-3 col-sm-12 col-xs-12"> 
+                   <label class="control-label labelx"> Payment Type </label>
+                   <select class="form-control" name="cpayment" id="cpayment" style="width:120px;">
+                   
+<option value="CASH"<?php echo set_select('cpayment', 'payment', isset($default['payment']) && $default['payment'] == 'CASH' ? TRUE : FALSE); ?>> CASH </option> 
+<option value="WALLET"<?php echo set_select('cpayment', 'payment', isset($default['payment']) && $default['payment'] == 'WALLET' ? TRUE : FALSE); ?>> WALLET </option> 
+                   </select>
                </div>
                
                <div class="col-md-3 col-sm-12 col-xs-12">
@@ -175,7 +171,7 @@
 
       <div class="form-group">
         <label class="control-label labelx"> Qty </label> <br>
-        <input type="number" name="tqty" class="form-control" style="width:70px;" maxlength="3" required> &nbsp;
+        <input type="number" name="tqty" class="form-control" style="width:70px;" maxlength="3" required value="1"> &nbsp;
       </div>
       
       <div class="form-group">
@@ -212,8 +208,6 @@
           <tr class="headings">
             <th class="column-title"> No </th>
             <th class="column-title"> Product </th>
-            <th class="column-title"> Dimension m<sup>2</sup> </th>
-            <th class="column-title"> Vol m<sup>3</sup> </th>
             <th class="column-title"> Qty </th>
             <th class="column-title"> Price </th>
             <th class="column-title"> Tax </th>
@@ -236,13 +230,6 @@
                 return $val->get_sku($pid).'<br>'.ucfirst($val->get_name($pid));
             }
             
-            function attribute($attr,$type=null){
-                
-                $res = explode('|',$attr);
-                if ($type == 'dimension'){ return @$res[0].' x '.@$res[1]; }
-                else{ return floatval(@$res[9]/100); }
-            }
-            
             if ($items)
             {
                 $i=1;
@@ -252,8 +239,6 @@
                      <tr class=\"even pointer\">
                         <td> ".$i." </td>
                         <td> ".product($res->product_id)." </td>
-                        <td> ".attribute($res->attribute,'dimension')." </td>
-                        <td> ".attribute($res->attribute,'vol')." </td>
                         <td> ".$res->qty." </td>
                         <td class=\"a-right a-right \"> ".idr_format(intval($res->qty*$res->price))." </td>
                         <td class=\"a-right a-right \"> ".idr_format($res->tax)." </td>
@@ -277,41 +262,7 @@
 
 <!-- kolom shipping -->
     <div class="col-md-5 col-sm-12 col-xs-12" style="margin-bottom:20px;">
-        <form id="ajaxtransform1" class="" method="post" action="<?php echo $form_action_shipping; ?>">
-        <fieldset>
-        <legend> Shipping </legend>
-                        
-        <div class="col-md-12 col-sm-12 col-xs-12">
-          <label class="control-label labelx"> Destination / District </label>
-          <?php $js = "class='select2_single form-control' id='ccity_ongkir' tabindex='-1' style='min-width:150px;' "; 
-	      echo form_dropdown('ccity', $city, isset($default['dest']) ? $default['dest'] : '', $js); ?>
-            
-         <div id="districtbox" style="border:0px solid red; margin:10px 0 5px 0;"></div>    
-          
-          <input type="checkbox" id="ckship"> <small style="font-weight:bold;"> * Use as ship address </small>
-<textarea rows="3" name="tshipaddkurir" required id="tshipaddkurir" style="width:100%; margin-top:5px; margin-bottom:5px;" placeholder="Destination Description"><?php echo isset($default['dest_desc']) ? $default['dest_desc'] : '' ?></textarea>
-        </div> 
-              
         
-        <div class="col-md-4 col-sm-12 col-xs-12">
-          <label class="control-label labelx"> Package </label>
-    <input type="text" class="form-control" name="cpackage" id="tpackage" readonly value="<?php echo isset($default['package']) ? $default['package'] : ''; ?>">    
-    <div id="package_box"></div>
-    <input type="hidden" name="rate" id="rate" value="<?php echo isset($default['rate']) ? $default['rate'] : ''; ?>">
-        </div>        
-        
-        <div class="col-md-2 col-sm-12 col-xs-12">
-          <label class="control-label labelx"> Weight </label>
-    <input type="number" name="tweight" id="tweight" style="width:65px;" readonly class="form-control" value="<?php echo isset($weight) ? $weight:'1'; ?>" >
-        </div> 
-            
-        <div class="col-md-1 col-sm-12 col-xs-12">
-          <label class="control-label labelx">.</label>    
-          <button type="submit" class="btn btn-primary btn-md" title="Shipping Process"> <i class="fa fa-truck"> </i> </button>
-        </div>     
-             
-       </fieldset>
-    </form>    
     </div>    
 <!-- kolom shipping -->
     

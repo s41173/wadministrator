@@ -139,6 +139,61 @@ $(document).ready(function (e) {
 		return false;
 	});
 
+	// cancel status
+	$(document).on('click','.text-cancel',function(e)
+	{	
+		e.preventDefault();
+		var element = $(this);
+		var del_id = element.attr("id");
+		var url = sites_cancel +"/"+ del_id;
+
+		$.ajax({
+			type: 'POST',
+			url: url,
+			cache: false,
+			headers: { "cache-control": "no-cache" },
+			success: function(result) {
+				
+				res = result.split("|");
+				if (res[0] == "true")
+				{   
+					error_mess(1,res[1],0);
+					load_data();
+				}
+				else if (res[0] == 'warning'){ error_mess(2,res[1],0); }
+				else{ error_mess(3,res[1],0); }
+			}
+		})
+		return false;
+	});
+
+	// cleaning status
+	$(document).on('click','#bcleaning',function(e)
+	{	
+		e.preventDefault();
+		var url = sites_cleaning;
+
+		$.ajax({
+			type: 'POST',
+			url: url,
+			cache: false,
+			headers: { "cache-control": "no-cache" },
+			success: function(result) {
+				
+				res = result.split("|");
+				if (res[0] == "true")
+				{   
+					error_mess(1,res[1],0);
+					load_data();
+				}
+				else if (res[0] == 'warning'){ error_mess(2,res[1],0); }
+				else{ error_mess(3,res[1],0); }
+			}
+		})
+		return false;
+	});
+	
+
    // fungsi ajax form sales
 	$('#salesformdata').submit(function() {
 
@@ -202,41 +257,18 @@ $(document).ready(function (e) {
 	});
 
 		// fungsi ajax get customer
-	$(document).on('change','#ccustomer',function(e)
+	$(document).on('change','#cproduct',function(e)
 	{	
 		e.preventDefault();
-		var value = $("#ccustomer").val();
-		var url = sites+'/get_customer/'+value;
+		var value = $(this).val();
+		var url = sites_ajax_product+'/'+value;
 
-		if (value){ 
-		    // batas
-			$.ajax({
-				type: 'POST',
-				url: url,
-	    	    cache: false,
-				headers: { "cache-control": "no-cache" },
-				success: function(result) {
-				var res = result.split('|');
-				$("#temail").val(res[0]);
-				$("#tshipadd,#tshipaddkurir").val(res[1]);
-				}
-			})
-			return false;
-
-		}else { swal('Error Load Data...!', "", "error"); }
-
+		if (value){
+			$.get(url, function(data, status){
+				$("#tprice").val(data);
+			});
+		}
 	});
-
-
-	// ckship
-	$('#ckship').change(function() {
-        if($(this).is(":checked")) {
-          
-          var par = $("#tshipadd").val();	
-          $("#tshipaddkurir").val(par);
-
-        }else { $("#tshipaddkurir").val(""); }
-    });
 
 
 	$('#searchform').submit(function() {
@@ -295,6 +327,7 @@ $(document).ready(function (e) {
 				for(var i = 0; i < s.length; i++) {
 					if (s[i][8] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
 					if (s[i][9] == 1){ redeem = 'btn btn-success'; }else { redeem = 'btn btn-danger'; }
+					if (s[i][10] != null){ cancel = 'btn btn-success'; }else { cancel = 'btn btn-danger'; }
 					oTable.fnAddData([
 		'<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 								i+1,
@@ -308,6 +341,7 @@ $(document).ready(function (e) {
 		'<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 		'<a href="" class="'+redeem+' btn-xs text-redeem" id="' +s[i][0]+ '" title="Redeem Status"> <i class="fa fa-exchange"> </i> </a> '+
 		'<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
+		'<a href="" class="'+cancel+' btn-xs text-cancel" id="' +s[i][0]+ '" title="Confirmation Status"> <i class="fa fa-ban"> </i> </a> '+
 		'<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 		'</div>'
 									]);										
@@ -351,6 +385,7 @@ $(document).ready(function (e) {
 							for(var i = 0; i < s.length; i++) {
 						  if (s[i][8] == 1){ stts = 'btn btn-success'; }else { stts = 'btn btn-danger'; }
 						  if (s[i][9] == 1){ redeem = 'btn btn-success'; }else { redeem = 'btn btn-danger'; }
+						  if (s[i][10] != null){ cancel = 'btn btn-success'; }else { cancel = 'btn btn-danger'; }
 						  oTable.fnAddData([
 '<input type="checkbox" name="cek[]" value="'+s[i][0]+'" id="cek'+i+'" style="margin:0px"  />',
 										i+1,
@@ -364,6 +399,7 @@ $(document).ready(function (e) {
 '<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 '<a href="" class="'+redeem+' btn-xs text-redeem" id="' +s[i][0]+ '" title="Redeem Status"> <i class="fa fa-exchange"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
+'<a href="" class="'+cancel+' btn-xs text-cancel" id="' +s[i][0]+ '" title="Cancel Status"> <i class="fa fa-ban"> </i> </a> '+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
 										    ]);										

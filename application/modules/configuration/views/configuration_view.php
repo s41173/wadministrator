@@ -99,7 +99,8 @@
       <div class="form-group">
         <label class="control-label col-md-3 col-sm-3 col-xs-12" for="last-name"> Address </label>
         <div class="col-md-6 col-sm-6 col-xs-12">
-        <textarea name="taddress" id="taddress" required class="form-control" rows="3" placeholder="Address"></textarea>          
+        <textarea name="taddress" id="taddress" required class="form-control" rows="3" placeholder="Address"></textarea>        
+        <input type="text" class="form-control" id="tcoordinate" name="tcoordinate" placeholder="Coordinate" style="width:250px;" required>
         </div>
       </div>
       <div class="form-group">

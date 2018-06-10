@@ -74,6 +74,14 @@ class Shipping_lib extends Custom_Model {
       $query = $this->db->get($this->tableName)->row();
       if ($query){ return floatval($query->amount); }else{ return 0; }
     }
+    
+    function cleaning(){
+        $val = array('deleted' => date('Y-m-d H:i:s'));
+        $this->db->where('dates <>', date('Y-m-d'));
+        $this->db->where('status', 0);
+        $this->db->where('deleted', $this->deleted);
+        $this->db->update($this->tableName, $val);
+    }
 
 }
 

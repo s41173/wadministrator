@@ -218,6 +218,32 @@ $(document).ready(function (e) {
 		})
 		return false;
 	});
+
+	// calculate distance
+	$(document).on('click','#bcalculate',function(e)
+	{	
+		e.preventDefault();
+		var element = $(this);
+		var input = $("#tcoordinate").val();
+		var url = sites_api +"/calculate_distance";
+
+		var nilai = '{ "to":"'+input+'" }';
+		
+		$.ajax({
+			type: 'POST',
+			url: url,
+			data: nilai,
+			cache: false,
+			contentType: "application/json",
+            dataType: 'json',
+			headers: { "cache-control": "no-cache" },
+			success: function(result) {
+				
+				$("#tdistance").val(result.result);
+			}
+		})
+		return false;
+	});
 	
    // fungsi ajax form sales
 	$('#salesformdata').submit(function() {

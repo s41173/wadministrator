@@ -30,6 +30,34 @@ class Api extends MX_Controller {
    {
        redirect('login');
    }
+   
+   function calculate_distance(){
+        
+       $datax = (array)json_decode(file_get_contents('php://input')); 
+       
+       $destination = str_replace(' ', '', $datax['to']);
+       $property = new Property();
+       $property = $property->get();
+       $source = $property['coordinate'];
+       $error = null;
+       $result = 0;
+       
+       if ($destination != null){     
+         $dataJson = file_get_contents("https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=".$source."&destinations=".$destination."&key=AIzaSyCIyA_tbgcPHkf0NaVCgJZ3KtiCbYRaD0I");
+         $data = json_decode($dataJson,true);
+         $nilaiJarak = $data['rows'][0]['elements'][0]['distance']['text'];    
+         $result = round($nilaiJarak);
+       }
+       else{ $error = 'Invalid JSON Format'; }
+       $response = array('result' => $result, 'error' => $error);
+                
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;
+    }
 
    public function category($parent=0){
         
@@ -67,69 +95,6 @@ class Api extends MX_Controller {
             ->_display();
             exit; 
         }
-    }
-        
-    // get product list based category and limit
-    public function product($cat,$type=null,$limit=100){
-        
-        $lib = new Product_lib();
-        if ($type != 'recommend'){
-           $result = $lib->get_product_based_category($cat,$limit);    
-        }else{ $result = $lib->get_recommended($limit); }
-        
-        
-        foreach($result as $res){
-            
-            $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name, "order" => $res->orders, "price" => $res->price, "restricted" => $res->restricted, "qty" => $res->qty,  
-                               "image" => base_url().'images/product/'.$res->image);
-        }
-        $response['content'] = $output;
-            $this->output
-            ->set_status_header(200)
-            ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
-            ->_display();
-            exit; 
-    }
-    
-     public function product_detail($pid=0){
-        
-        $lib = new Product_lib();
-        $cat = new Categoryproduct_lib();
-        $model = new Model_lib();
-        
-        $res = $lib->get_detail_based_id($pid);
-        $url1 = null; $url2 = null; $url3 = null; $url4 = null; $url5 = null; $url6 = null;
-        if ($res->url_type == 'UPLOAD'){ $url = base_url().'images/product/'; 
-        
-            if ($res->url1){ $url1 = $url.$res->url1; }
-            if ($res->url2){ $url2 = $url.$res->url2; }
-            if ($res->url3){ $url3 = $url.$res->url3; }
-            if ($res->url4){ $url4 = $url.$res->url4; }
-            if ($res->url5){ $url5 = $url.$res->url5; }
-            if ($res->url6){ $url6 = $url.$res->url6; }
-        
-        }else{
-           $url1 = $res->url1; $url2 = $res->url2; $url3 = $res->url3;
-           $url4 = $res->url4; $url5 = $res->url5; $url6 = $res->url6;
-        }
-        
-        $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name,
-                           "category" => $cat->get_name($res->category), "model" => $model->get_name($res->model), 
-                           "model_id" => $res->model,
-                           "image" => base_url().'images/product/'.$res->image,  
-                           "url1" => $url1, "url2" => $url2, "url3" => $url3, "url4" => $url4, 
-                           "url5" => $url5, "url6" => $url6, "price" => $res->price, "restricted" => $res->restricted,
-                           "qty" => $res->qty, "start" => $res->start, "end" => $res->end, "recommended" => $res->recommended, "orders" => $res->orders, 
-                          );
-         
-        $response['content'] = $output;
-            $this->output
-            ->set_status_header(200)
-            ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
-            ->_display();
-            exit; 
     }
     
     function contact(){

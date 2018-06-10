@@ -78,6 +78,7 @@ $(document).ready(function (e) {
 					$("#tyear").val(data[0][19]);
 					$("#cbegin_month").val(data[0][20]).change();
 					$("#tbegin_year").val(data[0][21]);
+					$("#tcoordinate").val(data[0][22]);
 			   
 				},
 				error: function(e){

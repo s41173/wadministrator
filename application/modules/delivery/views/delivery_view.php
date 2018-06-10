@@ -44,6 +44,7 @@
     var sites_email_invoice  = "<?php echo site_url('delivery/send_invoice_email/');?>";
     var sites_primary   = "<?php echo site_url('delivery/publish/');?>";
 	var sites_attribute = "<?php echo site_url('delivery/attribute/');?>";
+    var sites_api = "<?php echo site_url('api/');?>";
 	var source = "<?php echo $source;?>";
     
     var url  = "<?php echo $graph;?>";
@@ -117,8 +118,7 @@ $atts1 = array(
 	  'screeny'    =>  '\'+((parseInt(screen.height) - 600)/2)+\'',
 );
 
-?>
-          
+?>        
            <form id="searchform" class="form-inline">
                            
               <div class="form-group">

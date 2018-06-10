@@ -41,7 +41,6 @@
 
 	<div style="border:0px solid red; float:left;">
 		<table border="0">
-			<tr> <td> Period </td> <td> : </td> <td> <?php echo $start.' - '.$end; ?> </td> </tr>
 			<tr> <td> Run Date </td> <td> : </td> <td> <?php echo $rundate; ?> </td> </tr>
 			<tr> <td> Log </td> <td> : </td> <td> <?php echo $log; ?> </td> </tr>
 		</table>
@@ -49,7 +48,7 @@
 
 	<center>
 	   <div style="border:0px solid green; width:230px;">
-	      <h4> <?php echo isset($company) ? $company : ''; ?> <br> Sales - Report (Pivot Table) </h4>
+	      <h4> <?php echo isset($company) ? $company : ''; ?> <br> Product - Report (Pivot Table) </h4>
 	   </div>
 	</center>
 
@@ -64,23 +63,25 @@
 		<table id="input" border="0" width="100%">
 		   <thead>
            <tr>
-<th> No </th> <th> Code </th> <th> Date </th> <th> Customer </th> <th> Payment Type </th> <th> Total </th> <th> Tax </th>
-<th> Cost </th> <th> Shipping </th> <th> Discount </th> <th> Amount </th> <th> Confirmation </th> <th> Redeem </th> 
-<th> Canceled </th>
-           </tr>
+<th> No </th> <th> Customer </th> <th> Content </th> <th> Type </th> <th> Read </th> <th> Status </th> <th> Created </th>
+		   </tr>
            </thead>
 		  
           <tbody> 
 		  <?php 
-              
-              function customer($val)
-              {
-                  $res = new Customer_lib(); 
-                  return strtoupper($res->get_name($val));
+		      
+			  function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }	
+              function customer($val){
+                  $res = new Customer_lib();
+                  return $res->get_name($val);
               }
-               
-              function pstatus($val){ if ($val == 0){ return 'N'; }else{ return 'Y'; } }
-			  		  
+              
+              function type($val){
+                  $res = new Notif_lib();
+                  return $res->get_type($val);
+              }
+              
+              
 		      $i=1; 
 			  if ($reports)
 			  {
@@ -89,19 +90,12 @@
 				   echo " 
 				   <tr> 
 				       <td class=\"strongs\">".$i."</td> 
-                       <td class=\"strongs\">".$res->code."</td> 
-                       <td class=\"strongs\">".tglin($res->dates)."</td> 
-                       <td class=\"strongs\">".customer($res->cust_id)."</td>
-                       <td class=\"strongs\">".$res->payment_type."</td>
-                       <td class=\"strongs\">".$res->total."</td>
-                       <td class=\"strongs\">".$res->tax."</td>
-                       <td class=\"strongs\">".$res->cost."</td>
-                       <td class=\"strongs\">".$res->shipping."</td>
-                       <td class=\"strongs\">".$res->discount."</td>
-                       <td class=\"strongs\">".floatval($res->amount+$res->cost+$res->shipping-$res->discount)."</td>
-                       <td class=\"strongs\">".pstatus($res->approved)."</td>
-                       <td class=\"strongs\">".$res->redeem_date."</td>
-                       <td class=\"strongs\">".$res->canceled."</td>
+					   <td class=\"strongs\">".customer($res->customer)."</td>
+                       <td class=\"strongs\">".$res->content."</td>
+                       <td class=\"strongs\">".type($res->type)."</td>
+                       <td class=\"strongs\">".pstatus($res->reading)."</td>
+                       <td class=\"strongs\">".pstatus($res->status)."</td>
+                       <td class=\"strongs\">".tglin($res->created)."</td>
 				   </tr>";
 				   $i++;
 				}
@@ -109,10 +103,10 @@
 		  ?>
 		</tbody>      
 		</table>
-        
+		
 	</div>
 	
-     <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('sales'); ?>"> 
+     <a style="float:left; margin:10px;" title="Back" href="<?php echo site_url('notif'); ?>"> 
         <img src="<?php echo base_url().'images/back.png'; ?>"> 
      </a>
     

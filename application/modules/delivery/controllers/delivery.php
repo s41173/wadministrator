@@ -23,14 +23,28 @@ class Delivery extends MX_Controller
         $this->shiprate = new Shiprate_lib();
         $this->courier = new Courier_lib();
         $this->api_lib = new Api_lib();
+        $this->notif = new Notif_lib();
     }
 
-    private $properti, $modul, $title, $api_lib;
+    private $properti, $modul, $title, $api_lib, $notif;
     private $role, $customer, $payment, $city, $product, $sales, $shiprate, $courier;
 
     function index()
     {
        $this->get_last(); 
+    }
+    
+    
+    function calculate_distance($destination='0',$type=null){
+        
+        $source = $this->properti['coordinate'];
+        
+        $dataJson = file_get_contents("https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=".$source."&destinations=".$destination."&key=AIzaSyCIyA_tbgcPHkf0NaVCgJZ3KtiCbYRaD0I");
+        $data = json_decode($dataJson,true);
+        if ($data){
+          $nilaiJarak = $data['rows'][0]['elements'][0]['distance']['text'];    
+        }else{ $nilaiJarak = 0; }
+        if (!$type){ return round($nilaiJarak); }else{ echo round($nilaiJarak); }
     }
     
     function calculate_shiprate($distance=9,$payment='CASH',$minimum=10000) {
@@ -146,14 +160,16 @@ class Delivery extends MX_Controller
         }
         else{ 
             if ($val->status == 0){ $lng = array('status' => 1);  }else { $lng = array('status' => 0); }
-            $this->Delivery_model->update($uid,$lng);
-            
-            // update shipping amount sales
-            $res = array('shipping' => $val->amount);
-            $this->sales->update($val->sales_id, $res);
-            
-            // kirim pesan notif ke customer bahwa pengiriman sedang dalam proses
-            echo 'true|Status Changed...!';
+            $content = $this->properti['name']." : Order ".$sales->code." sedang proses pengantaran ke alamat tujuan. Informasi lebih lanjut hubungi kami di ".$this->properti['phone1'];
+            if ($this->notif->create($sales->cust_id, $content, 1, $this->title) == true){
+               
+                $this->Delivery_model->update($uid,$lng);
+                // update shipping amount sales
+                $res = array('shipping' => $val->amount);
+                $this->sales->update($val->sales_id, $res);
+                
+                echo 'true|Status Changed...!';
+            }else{ echo 'error|Notif Sent Failed...!'; }
         }
        
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
@@ -266,7 +282,7 @@ class Delivery extends MX_Controller
         $delivery = $this->Delivery_model->get_by_id($param)->row();
         $sales = $this->sales->get_detail_sales($delivery->sales_id);
         
-        $data['title'] = $this->properti['name'].' | Invoice '.ucwords($this->modul['title']).' | SO-0'.$delivery->sales_id;
+        $data['title'] = $this->properti['name'].' | Invoice '.ucwords($this->modul['title']).' | '.$sales->code;
         
         if ($delivery){
                 
@@ -283,38 +299,21 @@ class Delivery extends MX_Controller
             $customer = $this->customer->get_details($sales->cust_id)->row();
             $data['c_name'] = strtoupper($customer->first_name.' '.$customer->last_name);
             $data['c_email'] = $customer->email;
-            $data['c_address'] = $customer->delivery_address;
-            $data['c_phone'] = $customer->phone1.' / '.$customer->phone2;
-            $data['c_city'] = $this->city->get_name($customer->city);
-            $data['c_zip'] = $customer->zip;
+            $data['c_phone'] = $customer->phone1;
+            
+            // sales details
+            $data['code'] = $sales->code;
 
             // delivery
             $data['so'] = $sales->code;
-            $data['dates'] = tglin($delivery->shipdate);
-
-            if ($delivery->paid_date){ $data['paid'] = 'Paid'; }else { $data['paid'] = 'Unpaid'; }
-            $data['total'] = $delivery->amount;
-
-            // weight total
-            $total = $this->sales->total($delivery->sales_id);
-            $data['weight'] = $delivery->weight;
-
-            // delivery details
-            $delivery = $this->Delivery_model->get_by_id($param)->row();
-            
-            $data['ship_date'] = tglin($delivery->shipdate);
-            $data['ship_time'] = timein($delivery->shipdate);
-            $data['courier'] = strtoupper($delivery->courier);
-            $data['package'] = $delivery->package;
-            $data['awb'] = strtoupper($delivery->awb);
-            $data['rate'] = $delivery->rate;
-            $data['dest_desc'] = $delivery->dest_desc;
-            $data['dest'] = $this->shiprate->get_city_name($delivery->dest);
-
-            if (!$delivery->shipdate){ $data['ship_status'] = 'Not Shipped'; }else { $data['ship_status'] = 'Shipped'; } 
-
-            // transaction table
-            $data['items'] = $this->sales->get_transaction_sales($delivery->sales_id)->result();
+            $data['dates'] = tglin($delivery->dates);
+            $data['time'] = timein($delivery->dates);
+            $data['destination'] = $delivery->destination;
+            $data['courier'] = $this->courier->get_detail($delivery->courier, 'name');
+            $data['distance'] = $delivery->distance;
+            $data['received'] = timein($delivery->received);
+            $data['confirmed'] = $delivery->confirm_customer;
+            $data['amount'] = idr_format($delivery->amount);
             
              if ($type == 'invoice'){ $this->load->view('delivery_invoice', $data); }
              else{
@@ -365,13 +364,17 @@ class Delivery extends MX_Controller
        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
            
         $val = $this->Delivery_model->get_by_id($uid)->row();
+        $sales = $this->sales->get_detail_sales($val->sales_id);
         if ($val->status == 0){
             echo "error|Transaction not posted..!";
         }
+        if ($val->received != null){
+            echo 'warning|Transaction Has Been Received.';
+        }
         else{ 
-            $lng = array('received' => date('Y-m-d H:i:s'));
+            $lng = array('received' => date('Y-m-d H:i:s')); 
             $this->Delivery_model->update($uid,$lng);
-            echo 'true|Transaction Has Been Received at '.date('d-m-Y H:i:s');
+            echo 'true|Transaction Has Been Received at '.date('d-m-Y H:i:s');    
         }
        
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }

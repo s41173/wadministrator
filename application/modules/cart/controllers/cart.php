@@ -33,26 +33,22 @@ class Cart extends MX_Controller
     public function get(){
         
         $datas = (array)json_decode(file_get_contents('php://input'));
-        $agent = $datas['agent_id'];
+        $customer = $datas['customer'];
         
-        $result = $this->model->get_by_agent($agent)->result();
+        $result = $this->model->get_by_customer($customer)->result();
         
         if ($result){
 	foreach($result as $res)
 	{
            $product = $this->product->get_by_id($res->product_id)->row();
-           $attr = explode('|', $res->attribute);
-           $color = $attr[4];
-           $color = $this->color->get_name($color);
-	   $output[] = array ("id" => $res->id, "agent_id" => $res->agent_id, "product_id" => $res->product_id, "product" => $product->name,
-                              "model" => $this->series->get_name($product->model),
-                              "qty" => $res->qty, "tax" => $res->tax, "amount" => $res->amount, "price" => $res->price, "attribute" => $res->attribute, "color" => $color,
-                              "description" => $res->description, "publish" => $res->publish, "glass" => $this->material->get_name($attr[6]),
+	   $output[] = array ("id" => $res->id, "customer" => $res->customer, "product_id" => $res->product_id, "product" => $product->name,
+                              "qty" => $res->qty, "tax" => $res->tax, "amount" => $res->amount, "price" => $res->price, "attribute" => $res->attribute,
+                              "description" => $res->description, "publish" => $res->publish,
                               "image" => base_url().'images/product/'.$product->image);
 	}
         
-        $total_p = $this->model->total($agent,1);
-        $total_u = $this->model->total($agent,0);
+        $total_p = $this->model->total($customer,1);
+        $total_u = $this->model->total($customer,0);
         
         $total = array('amount_publish' => intval($total_p['amount']), 'amount_unpublish' => intval($total_u['amount']), 'qty_publish' => intval($total_p['qty']), 'qty_unpublish' => intval($total_u['qty']));
         $response['content'] = $output;
@@ -67,13 +63,13 @@ class Cart extends MX_Controller
         }
     }
     
-    function delete_agent()
+    function delete_customer()
     {
         $datax = (array)json_decode(file_get_contents('php://input')); 
         $status = true;
         $error = null;
         
-        if ( isset($datax['agent_id']) ){  $this->model->delete_by_agent($datax['agent_id']);  }
+        if ( isset($datax['customer']) ){  $this->model->delete_by_customer($datax['customer']);  }
         else{ $status = false; $error = 'Invalid JSON Format';  }
         
         $response = array('status' => $status, 'error' => $error);
@@ -127,17 +123,24 @@ class Cart extends MX_Controller
         $status = true;
         $error = null;
         
-        if ( isset($datax['agent_id']) && isset($datax['product_id']) && isset($datax['qty']) && isset($datax['price']) && isset($datax['attribute']) && isset($datax['description']) )
+        if ( isset($datax['customer']) && isset($datax['product_id']) && isset($datax['qty']) && isset($datax['attribute']) && isset($datax['description']) )
         {   
-            $amount = intval($datax['price'])*intval($datax['qty']);
-            $tax = intval($amount*0.1);
             
-            $cart = array('agent_id' => $datax['agent_id'], 'product_id' => $datax['product_id'], 'qty' => $datax['qty'],
-                          'price' => $datax['price'], 'attribute' => $datax['attribute'], 'description' => $datax['description'],  
-                          'amount' => $amount, 'tax' => $tax,
-                          'created' => date('Y-m-d H:i:s'));
+            if ( $this->product->valid_restricted($datax['product_id']) == FALSE ){ $error = 'Waktu pemesanan berakhir'; $status = false; }
+            elseif( $this->product->valid_qty($datax['product_id'], $datax['qty']) == FALSE ) { $error = 'Stock tidak tersedia'; $status = false;  }
+            else{
+                $price = $this->product->get_price($datax['product_id']);
+                $amount = intval($price)*intval($datax['qty']);
+                $tax = intval($amount*0.1);
 
-            $this->model->add($cart);
+                $cart = array('customer' => $datax['customer'], 'product_id' => $datax['product_id'], 'qty' => $datax['qty'],
+                              'price' => $price, 'attribute' => $datax['attribute'], 'description' => $datax['description'],  
+                              'amount' => $amount, 'tax' => $tax,
+                              'created' => date('Y-m-d H:i:s'));
+
+                $this->model->add($cart);
+            }
+
         }
         else{ $status = false; $error = 'Invalid JSON Format';  }
         

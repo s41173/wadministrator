@@ -6,8 +6,10 @@ class Product_lib extends Custom_Model {
     {
         $this->deleted = $deleted;
         $this->tableName = 'product';
+        $this->sales = new Sales_lib();
     }
-
+    
+    private $sales;
     protected $field = array('id', 'sku', 'category', 'name', 'description', 'image', 'url_type', 'url1', 'url2', 'url3',
                              'url4', 'url5', 'url6', 'capital', 'price', 'supplier', 'restricted', 'qty', 'start', 'end',
                              'recommended', 'orders', 'publish', 'created', 'updated', 'deleted');
@@ -58,6 +60,17 @@ class Product_lib extends Custom_Model {
         }
     }
     
+    function get_price($id=null)
+    {
+        if ($id)
+        {
+           $this->db->select($this->field);
+           $this->db->where('id', $id);
+           $res = $this->db->get('product')->row();
+           return intval($res->price);
+        }
+    }
+     
     function get_sku($id=null)
     {
         if ($id)
@@ -142,6 +155,32 @@ class Product_lib extends Custom_Model {
         $this->db->order_by('orders', 'asc'); 
         $this->db->limit($limit);
         return $this->db->get($this->tableName)->result();
+    }
+    
+    function valid_restricted($pid){
+        
+        $this->db->select($this->field);
+        $this->db->where('id', $pid);
+        $res = $this->db->get($this->tableName)->row();
+        
+        if ($res->restricted == 1){
+            $now = date('H:i:s');
+            if ($now >= $res->start && $now <= $res->end){ return TRUE; }else{ return FALSE; }
+        }else{ return TRUE; }
+    }
+    
+    function valid_qty($pid,$req=0){
+        
+        $this->db->select($this->field);
+        $this->db->where('id', $pid);
+        $res = $this->db->get($this->tableName)->row();
+        
+        if ($res->restricted == 1){
+            $qty = $this->sales->total_based_date(date('Y-m-d'),$pid);
+            $qty = intval($qty['qty']);
+            $qty = intval($req + $qty);
+            if ($qty <= $res->qty){ return TRUE; }else{ return FALSE; }
+        }else{ return TRUE; }
     }
 
 }

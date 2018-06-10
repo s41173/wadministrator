@@ -10,10 +10,10 @@ class Cart_lib extends Main_model {
 
     private $ci;
     
-    protected $field = array('id', 'agent_id', 'product_id', 'qty', 'tax', 'amount', 'price', 'attribute', 'description' , 'created');
+    protected $field = array('id', 'customer', 'product_id', 'qty', 'tax', 'amount', 'price', 'attribute', 'description' , 'created');
        
     
-    function get_by_agent($agent=null)
+    function get_by_customer($agent=null)
     {
         $this->db->select($this->field);
         $this->cek_null($agent, 'agent_id');

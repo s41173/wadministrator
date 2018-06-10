@@ -76,7 +76,7 @@
           <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3 btn-group">
           <button type="submit" class="btn btn-primary" id="button">Save</button>
           <button type="button" id="bclose" class="btn btn-danger" data-dismiss="modal">Close</button>
-          <button type="button" id="breset" class="btn btn-warning">Reset</button>
+          <button type="reset" id="breset" class="btn btn-warning">Reset</button>
           </div>
       </div>
   </form> 

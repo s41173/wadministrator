@@ -20,15 +20,15 @@
   a:hover { text-decoration:none;}
 </style>
 
-<script src="<?php echo base_url(); ?>js/moduljs/product.js"></script>
+<script src="<?php echo base_url(); ?>js/moduljs/sales.js"></script>
 <script src="<?php echo base_url(); ?>js-old/register.js"></script>
 
 <script type="text/javascript">
 
-	var sites_add  = "<?php echo site_url('configuration/add_process/');?>";
-	var sites_edit = "<?php echo site_url('configuration/update_process/');?>";
-	var sites_del  = "<?php echo site_url('configuration/delete/');?>";
-	var sites_get  = "<?php echo site_url('configuration/update/');?>";
+	var sites_add  = "<?php echo site_url('sales/add_process/');?>";
+	var sites_edit = "<?php echo site_url('sales/update_process/');?>";
+	var sites_del  = "<?php echo site_url('sales/delete/');?>";
+	var sites_get  = "<?php echo site_url('sales/update/');?>";
 	var source = "<?php echo $source;?>";
     var url  = "<?php echo $graph;?>";
 	

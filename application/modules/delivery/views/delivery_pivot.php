@@ -66,11 +66,11 @@
 		   
             <thead>
            <tr>
-<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Deliver Date </th> <th> Courier </th> <th> Distance </th> <th> Received </th> <th> Amount </th>  <th> Confirmed </th> <th> Rating </th> <th> Status </th> 
+<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Deliver Date </th> <th> Courier </th> <th> Coordinate </th> <th> Distance </th> <th> Received </th> <th> Amount </th>  <th> Confirmed </th> <th> Rating </th> <th> Status </th> 
            </tr>
            </thead>
 		  
-          <tbody> 
+         <tbody> 
 		  <?php 
               
               function get_sales($val,$type='dates')
@@ -103,6 +103,7 @@
                        <td class=\"strongs\">".get_sales($res->sales_id)."</td> 
 					   <td class=\"strongs\">".tglin($res->dates)."</td>
                        <td class=\"strongs\">".strtoupper(courier($res->courier))."</td>
+                       <td class=\"strongs\">".$res->coordinate."</td>
                        <td class=\"strongs\">".$res->distance."</td>
                        <td class=\"strongs\">".tglin($res->received)."</td>
                        <td class=\"strongs\">".$res->amount."</td>

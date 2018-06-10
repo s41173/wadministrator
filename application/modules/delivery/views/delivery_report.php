@@ -70,6 +70,7 @@
                         { name: "Sales Date", type: "string" },
 						{ name: "Deliver Date", type: "string" },
 						{ name: "Courier", type: "string" },
+                        { name: "Coordinate", type: "string" },
 						{ name: "Distance", type: "number" },
                         { name: "Received", type: "string" },
                         { name: "Amount", type: "number" },
@@ -103,6 +104,7 @@
 				  { text: 'Sales Date', dataField: 'Sales Date', width : 150 },
   				  { text: 'Deliver Date', dataField: 'Deliver Date', width : 120 },
 				  { text: 'Courier', dataField: 'Courier' },
+                  { text: 'Coordinate', dataField: 'Coordinate', width : 130 },
                   { text: 'Distance', dataField: 'Distance', width : 100 },
                   { text: 'Received', dataField: 'Received', width : 120 },
     { text: 'Amount', dataField: 'Amount', width : 170, cellsalign: 'right', cellsformat: 'number', aggregates: ['sum'] },
@@ -192,7 +194,7 @@
 		   
             <thead>
            <tr>
-<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Deliver Date </th> <th> Courier </th> <th> Distance </th> <th> Received </th> <th> Amount </th>  <th> Confirmed </th> <th> Rating </th> <th> Status </th> 
+<th> No </th> <th> Sales No </th> <th> Sales Date </th> <th> Deliver Date </th> <th> Courier </th> <th> Coordinate </th> <th> Distance </th> <th> Received </th> <th> Amount </th>  <th> Confirmed </th> <th> Rating </th> <th> Status </th> 
            </tr>
            </thead>
 		  
@@ -229,6 +231,7 @@
                        <td class=\"strongs\">".get_sales($res->sales_id)."</td> 
 					   <td class=\"strongs\">".tglin($res->dates)."</td>
                        <td class=\"strongs\">".strtoupper(courier($res->courier))."</td>
+                       <td class=\"strongs\">".$res->coordinate."</td>
                        <td class=\"strongs\">".$res->distance."</td>
                        <td class=\"strongs\">".tglin($res->received)."</td>
                        <td class=\"strongs\">".$res->amount."</td>

@@ -37,7 +37,8 @@ class Configuration extends MX_Controller
         $output[] = array ($result->id, $result->name, $result->address, $result->phone1, $result->phone2, $result->email,
                               $result->billing_email, $result->technical_email, $result->cc_email, $result->zip, $result->account_name,
                               $result->account_no, $result->bank, $result->city, $result->site_name, $result->meta_description,
-                              $result->meta_keyword, $result->logo, $this->period->month, $this->period->year, $this->period->start_month, $this->period->start_year  
+                              $result->meta_keyword, $result->logo, $this->period->month, $this->period->year, $this->period->start_month, $this->period->start_year,
+                              $result->coordinate
                              );
          
         $this->output
@@ -107,6 +108,7 @@ class Configuration extends MX_Controller
         {
            $this->form_validation->set_rules('tname', 'Property', 'required|max_length[100]');
            $this->form_validation->set_rules('taddress', 'Address', 'required');
+           $this->form_validation->set_rules('tcoordinate', 'Coordinate', 'required');
 	   $this->form_validation->set_rules('tphone1', 'Phone1', 'required|max_length[15]');
            $this->form_validation->set_rules('tphone2', 'Phone2', 'required|max_length[15]');
            $this->form_validation->set_rules('tmail', 'Property Mail', 'required|valid_email|max_length[100]');
@@ -139,7 +141,8 @@ class Configuration extends MX_Controller
         {
             if ($param == 1)
             {
-                $property = array('name' => $this->input->post('tname'), 'address' => $this->input->post('taddress'),
+                $property = array('name' => $this->input->post('tname'), 'address' => $this->input->post('taddress'), 
+                                  'coordinate' => str_replace(' ', '', $this->input->post('tcoordinate')),
                                   'phone1' => $this->input->post('tphone1'), 'phone2' => $this->input->post('tphone2'),
                                   'cc_email' => $this->input->post('tccmail'), 'email' => $this->input->post('tmail'),
                                   'billing_email' => $this->input->post('tbillmail'), 'technical_email' => $this->input->post('ttechmail'),

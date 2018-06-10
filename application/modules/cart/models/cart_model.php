@@ -13,21 +13,21 @@ class Cart_model extends Custom_Model
         $this->tableName = 'cart';
     }
     
-    protected $field = array('id', 'agent_id', 'product_id', 'qty', 'tax', 'amount', 'price', 'attribute', 'description' , 'publish', 'created');
+    protected $field = array('id', 'customer', 'product_id', 'qty', 'tax', 'amount', 'price', 'attribute', 'description' , 'publish', 'created');
     protected $com;
     
-    function get_by_agent($agent=null)
+    function get_by_customer($customer=null)
     {
         $this->db->select($this->field);
-        $this->cek_null($agent, 'agent_id');
+        $this->cek_null($customer, 'customer');
         $this->db->order_by('created', 'desc'); 
         $this->db->from($this->tableName); 
         return $this->db->get(); 
     }
     
-    function delete_by_agent($agent=null,$publish=1){
+    function delete_by_customer($customer=null,$publish=1){
         
-        $this->db->where('agent_id', $agent);
+        $this->db->where('customer', $customer);
         $this->db->where('publish', $publish);
         $this->db->delete($this->tableName);
     }
@@ -55,12 +55,12 @@ class Cart_model extends Custom_Model
         return $stts;
     }
     
-    function total($agent=0,$publish=0){
+    function total($customer=0,$publish=0){
         
         $this->db->select_sum('amount');
         $this->db->select_sum('price');
         $this->db->select_sum('qty');
-        $this->db->where('agent_id', $agent);
+        $this->db->where('customer', $customer);
         $this->db->where('publish', $publish);
         return $this->db->get($this->tableName)->row_array();
     }

@@ -37,9 +37,15 @@
      
     <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Coordinate / Distance </label>
-      <div class="col-md-4 col-sm-4 col-xs-12">
-        <input id="tcoordinate" class="form-control col-md-3 col-xs-12" type="text" name="tcoordinate">
-        <input id="tdistance" readonly class="form-control col-md-3 col-xs-12" type="text" name="tdistance">
+      <div class="col-md-5 col-sm-5 col-xs-12">
+       
+        <table>
+            <tr> 
+            <td> <input id="tcoordinate" class="form-control col-md-3 col-xs-12" type="text" name="tcoordinate"> </td>
+            <td> <button type="button" id="bcalculate" class="btn btn-default" style="margin:2px 0 0 2px;">CALC</button> </td>
+            </tr>
+            <tr> <td> <input id="tdistance" readonly class="form-control col-md-3 col-xs-12" type="text" name="tdistance"> </td> </tr>
+        </table>
       </div>
     </div>
      
