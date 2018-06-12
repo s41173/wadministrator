@@ -37,6 +37,13 @@
             <input id="turl_update" class="form-control col-md-7 col-xs-12" type="text" name="turl" required placeholder="Url">
           </div>
       </div>
+          
+       <div class="form-group">
+          <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Order </label>
+          <div class="col-md-2 col-sm-2 col-xs-12">
+            <input id="torder_update" class="form-control col-md-7 col-xs-12" type="number" name="torder" required>
+          </div>
+      </div>
            
 
       <div class="form-group">

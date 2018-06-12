@@ -37,6 +37,18 @@ class Product_lib extends Custom_Model {
            return $this->db->get('product')->row();
         }
     }
+    
+    function get_qty($pid=0){
+        
+        $res = $this->get_by_id($pid)->row();
+        
+        if ($res->restricted == 0){ $qty = 0; }else{
+               $sales_qty = $this->sales->total_based_date(date('Y-m-d'),$res->id);
+               $sales_qty = intval($sales_qty['qty']);
+               $qty = intval($res->qty-$sales_qty);
+        }
+        return $qty;
+    }
 
     function get_id($name=null)
     {
@@ -181,6 +193,14 @@ class Product_lib extends Custom_Model {
             $qty = intval($req + $qty);
             if ($qty <= $res->qty){ return TRUE; }else{ return FALSE; }
         }else{ return TRUE; }
+    }
+    
+    function get_slider(){
+        
+        $this->db->select('id, name, image, url, orders');
+        $this->db->where('deleted', $this->deleted);
+        $this->db->order_by('orders', 'asc'); 
+        return $this->db->get('slider')->result();
     }
 
 }

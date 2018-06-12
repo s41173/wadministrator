@@ -17,6 +17,7 @@ class Product extends MX_Controller
         $this->category = new Categoryproduct_lib();
         $this->product = new Product_lib();
         $this->supplier = new Supplier_lib();
+        $this->sales = new Sales_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
@@ -25,7 +26,7 @@ class Product extends MX_Controller
     }
 
     private $properti, $modul, $title, $product, $supplier;
-    private $role, $category, $model, $currency;
+    private $role, $category, $model, $currency, $sales;
 
     function index()
     {
@@ -48,7 +49,8 @@ class Product extends MX_Controller
         
         foreach($result as $res){
             
-            $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name, "order" => $res->orders, "price" => $res->price, "restricted" => $res->restricted, "qty" => $res->qty,  
+            $qty = $this->product->get_qty($res->id);
+            $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name, "order" => $res->orders, "price" => $res->price, "restricted" => $res->restricted, "qty" => $qty,  
                                "image" => base_url().'images/product/'.$res->image);
         }
         $response['content'] = $output;
@@ -67,6 +69,7 @@ class Product extends MX_Controller
         $model = new Model_lib();
         
         $res = $lib->get_detail_based_id($pid);
+        $qty = $lib->get_qty($res->id);
         $url1 = null; $url2 = null; $url3 = null; $url4 = null; $url5 = null; $url6 = null;
         if ($res->url_type == 'UPLOAD'){ $url = base_url().'images/product/'; 
         
@@ -87,7 +90,7 @@ class Product extends MX_Controller
                            "image" => base_url().'images/product/'.$res->image,  
                            "url1" => $url1, "url2" => $url2, "url3" => $url3, "url4" => $url4, 
                            "url5" => $url5, "url6" => $url6, "price" => $res->price, "restricted" => $res->restricted,
-                           "qty" => $res->qty, "start" => $res->start, "end" => $res->end, "recommended" => $res->recommended, "orders" => $res->orders, 
+                           "qty" => $qty, "start" => $res->start, "end" => $res->end, "recommended" => $res->recommended, "orders" => $res->orders, 
                           );
          
         $response['content'] = $output;

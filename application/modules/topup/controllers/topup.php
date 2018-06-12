@@ -18,7 +18,7 @@ class Topup extends MX_Controller
         $this->courier = new Courier_lib();
         $this->bank = new Bank_lib();
         $this->ledger = new Wallet_ledger_lib();
-        $this->sms = new Sms_lib();
+        $this->notif = new Notif_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
@@ -27,7 +27,7 @@ class Topup extends MX_Controller
     }
 
     private $properti, $modul, $title;
-    private $role,$customer,$courier,$bank,$ledger,$sms;
+    private $role,$customer,$courier,$bank,$ledger,$notif;
 
     function index()
     {
@@ -204,15 +204,8 @@ class Topup extends MX_Controller
 	$this->load->view('template', $data);
     }
     
-    function send_confirmation_sms($pid){
-       
-        $trans = $this->Topup_model->get_by_id($pid)->row();
-        $mess = $this->properti['name']." : Topup berhasil senilai ".idr_format($trans->amount)." pada tanggal ".tglin($trans->dates).' '.timein($trans->dates).". No transaksi : TOP-".$trans->id;
-        return $this->sms->send($this->customer->get_detail($trans->customer, 'phone1'), $mess);
-    }
-    
-    private function send_confirmation_email($pid)
-    {   
+    function invoice($pid=0){
+        
         // property display
        $data['p_logo'] = $this->properti['logo'];
        $data['p_name'] = $this->properti['name'];
@@ -223,44 +216,44 @@ class Topup extends MX_Controller
        $data['p_phone'] = $this->properti['phone1'];
        $data['p_email'] = $this->properti['email'];
        
-       $customer = $this->Customer_model->get_by_id($pid)->row();
-
-       $data['name']    = strtoupper($customer->first_name.' '.$customer->last_name);
-       $data['type']    = strtoupper($customer->type);
-       $data['address'] = $customer->address;
-       $data['phone']    = $customer->phone1.' / '.$customer->phone2;
-       $data['email']    = $customer->email;
-       $data['password'] = $customer->password;
-       $data['zip']     = $customer->zip;
-       $data['city']    = $this->city->get_name($customer->city);
-       $data['district'] = $this->disctrict->get_name($customer->region);
-       $data['joined']  = tglin($customer->joined).' / '. timein($customer->joined);
-         
-        // email send
-        $this->load->library('email');
-        $config['charset']  = 'utf-8';
-        $config['wordwrap'] = TRUE;
-        $config['mailtype'] = 'html';
-
-        $this->email->initialize($config);
-        $this->email->from($this->properti['email'], $this->properti['name']);
-        $this->email->to($customer->email);
-        $this->email->cc($this->properti['cc_email']); 
+       $trans = $this->Topup_model->get_by_id($pid)->row();
+       
+       $data['code'] = 'TOP-0'.$trans->id;
+       $data['date'] = tglin($trans->dates);
+       $data['time'] = timein($trans->dates);
+       $data['type'] = $this->get_type($trans->type);
+       $data['courier'] = $this->courier->get_detail($trans->courier, 'name');
+       $data['amount'] = idr_format($trans->amount);
+       $data['bank'] = $this->bank->get_details($trans->bank, 'acc_no').' &nbsp; <br> '.$this->bank->get_details($trans->bank, 'acc_name').'<br>'.$this->bank->get_details($trans->bank, 'acc_bank');
+       
+       if ($trans->type == 0){ $view = 'topup_cash'; }
+       elseif ($trans->type == 1){ $view = 'topup_driver'; }
+       elseif ($trans->type == 2){ $view = 'topup_transfer'; }
         
-        $html = $this->load->view('customer_confirmation',$data,true); 
-        $this->email->subject('Customer Confirmation - '.strtoupper($customer->code));
-        $this->email->message($html);
-//        $pdfFilePath = FCPATH."/downloads/".$no.".pdf";
-
-        if (!$this->email->send()){ return false; }else{ return true;  }
+       $html = $this->load->view($view, $data, true);
+       return $html;
     }
+
     
     function publish($uid = null)
     {
        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
        $val = $this->Topup_model->get_by_id($uid)->row();
-       if ($val->status == 0){ $lng = array('status' => 1); $this->Topup_model->update($uid,$lng);
-                               $this->ledger->add('TOP', $uid, $val->dates, $val->amount, 0, $val->customer); echo 'true|Status Changed...!'; }
+       if ($val->status == 0){ 
+           
+          try { 
+            $lng = array('status' => 1); $this->Topup_model->update($uid,$lng);
+            $this->ledger->add('TOP', $uid, $val->dates, $val->amount, 0, $val->customer);   
+            
+            $sms = $this->properti['name']." : Topup berhasil senilai ".idr_format($val->amount)." pada tanggal ".tglin($val->dates).' '.timein($val->dates).". No transaksi : TOP-0".$val->id;
+            $html = $this->invoice($uid);
+            $notifemail = $this->notif->create($val->customer, $html, 0, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
+            $notifsms = $this->notif->create($val->customer, $sms, 1, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
+            
+            if ($notifemail == true && $notifsms == true){  echo 'true|Confirmation Success...!'; }else{ echo 'warning|Notifications failed to send'; }
+          } catch (Exception $e) { echo 'error|'.$e->getMessage(); }
+           
+       }
        else{ echo 'warning|Transaction Already Posted...!'; }
        }else{ echo "error|Sorry, you do not have the right to change publish status..!"; }
     }

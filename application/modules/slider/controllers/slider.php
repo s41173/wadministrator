@@ -32,7 +32,7 @@ class Slider extends MX_Controller
         if ($result){
 	foreach($result as $res)
 	{           
-	   $output[] = array ($res->id, $res->name, base_url().'images/slider/'.$res->image, $res->url);
+	   $output[] = array ($res->id, $res->name, base_url().'images/slider/'.$res->image, $res->url, $res->orders);
 	}
             $this->output
             ->set_status_header(200)
@@ -83,7 +83,7 @@ class Slider extends MX_Controller
         $this->table->set_empty("&nbsp;");
 
         //Set heading untuk table
-        $this->table->set_heading('#','No', 'Name', 'Url', 'Image', 'Action');
+        $this->table->set_heading('#','No', 'Name', 'Url', 'Order', 'Image', 'Action');
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url('slider/getdatatable');
@@ -177,6 +177,7 @@ class Slider extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tname', 'Slider Name', 'required||maxlength[100]|callback_valid_slider');
         $this->form_validation->set_rules('turl', 'Url', 'required');
+        $this->form_validation->set_rules('torder', 'Order', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -196,12 +197,14 @@ class Slider extends MX_Controller
                 $info['file_name'] = null;
                 $data['error'] = $this->upload->display_errors();
                 $slider = array('name' => $this->input->post('tname'), 'url' => $this->input->post('turl'),
+                                'orders' => $this->input->post('torder'),
                                 'image' => null, 'created' => date('Y-m-d H:i:s'));
             }
             else
             {
                 $info = $this->upload->data();
                 $slider = array('name' => $this->input->post('tname'), 'url' => $this->input->post('turl'),
+                                'orders' => $this->input->post('torder'),
                                 'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
             }
 
@@ -226,7 +229,7 @@ class Slider extends MX_Controller
 	$this->session->set_userdata('langid', $slider->id);
 //        $this->load->view('slider_update', $data);
         
-        echo $uid.'|'.$slider->name.'|'.base_url().'images/slider/'.$slider->image.'|'.$slider->url;
+        echo $uid.'|'.$slider->name.'|'.base_url().'images/slider/'.$slider->image.'|'.$slider->url.'|'.$slider->orders;
     }
 
 
@@ -265,6 +268,7 @@ class Slider extends MX_Controller
 	// Form validation
         $this->form_validation->set_rules('tname', 'Slider Name', 'required||maxlength[100]|callback_validating_slider');
         $this->form_validation->set_rules('turl', 'Url', 'required');
+        $this->form_validation->set_rules('torder', 'Order', 'required|numeric');
 
         if ($this->form_validation->run($this) == TRUE)
         {
@@ -284,6 +288,7 @@ class Slider extends MX_Controller
                 $info['file_name'] = null;
                 $data['error'] = $this->upload->display_errors();
                 $slider = array('name' => $this->input->post('tname'), 'url' => $this->input->post('turl'),
+                                'orders' => $this->input->post('torder'), 
                                 'created' => date('Y-m-d H:i:s'));
             }
             else
@@ -291,6 +296,7 @@ class Slider extends MX_Controller
                 $this->remove_image($this->session->userdata('langid'));
                 $info = $this->upload->data();
                 $slider = array('name' => $this->input->post('tname'), 'url' => $this->input->post('turl'),
+                                'orders' => $this->input->post('torder'),
                                 'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
             }
 

@@ -35,6 +35,7 @@ $(document).ready(function (e) {
 				
 				$("#tname_update").val(res[1]);
 				$("#turl_update").val(res[3]);
+				$("#torder_update").val(res[4]);
 				$("#catimg_update").attr("src",res[2]);
 			}
 		})
@@ -80,6 +81,7 @@ $(document).ready(function (e) {
 										i+1,
 										s[i][1],
 										s[i][3],
+										s[i][4],
 '<img src="'+s[i][2]+'" class="img_product_lg" alt="'+s[i][1]+'">',
 '<div class="btn-group" role"group">'+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a>'+

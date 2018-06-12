@@ -14,7 +14,7 @@ class Slider_model extends Custom_Model
     }
     
     
-    protected $field = array('id', 'name', 'image', 'url','created', 'updated', 'deleted');
+    protected $field = array('id', 'name', 'image', 'url', 'orders', 'created', 'updated', 'deleted');
     protected $com;
             
     function count_all_num_rows()

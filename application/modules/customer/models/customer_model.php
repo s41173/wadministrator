@@ -49,10 +49,9 @@ class Customer_model extends Custom_Model
         return $this->db->get(); 
     }
     
-    function login($user=null,$pass=null){
+    function login($user=null){
         
-        $this->db->where('email', $user);
-        $this->db->where('password', $pass);
+        $this->db->where('phone1', $user);
         $this->db->where('status', 1);
         $this->db->limit(1);
         $res = $this->db->get($this->tableName)->num_rows();
@@ -63,6 +62,14 @@ class Customer_model extends Custom_Model
         
         $this->db->select($this->field);
         $this->db->where('email', $username);
+        $this->db->where('deleted', $this->deleted);
+        return $this->db->get($this->tableName);
+    }
+    
+    function get_by_phone($phone=null){
+        
+        $this->db->select($this->field);
+        $this->db->where('phone1', $phone);
         $this->db->where('deleted', $this->deleted);
         return $this->db->get($this->tableName);
     }

@@ -24,9 +24,11 @@ class Bank_lib extends Main_model {
     
     function get_details($id,$type=null)
     {
-       $this->db->where('id', $id);
-       if (!$type){ return $this->db->get($this->tableName);  }
-       else { $res = $this->db->get($this->tableName)->row(); return $res->$type;  }
+        if ($id != 0){
+           $this->db->where('id', $id);
+           if (!$type){ return $this->db->get($this->tableName);  }
+          else { $res = $this->db->get($this->tableName)->row(); return $res->$type;  }
+        }
     }
     
     function combo()

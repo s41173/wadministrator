@@ -21,6 +21,7 @@ class Customer extends MX_Controller
         $this->period = new Period_lib();
         $this->period = $this->period->get();
         $this->ledger = new Wallet_ledger_lib();
+        $this->notif = new Notif_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
@@ -29,26 +30,11 @@ class Customer extends MX_Controller
     }
 
     private $properti, $modul, $title, $ledger, $city, $disctrict;
-    private $role, $login, $balance, $period;
+    private $role, $login, $balance, $period, $notif;
 
     function index()
     {
        $this->get_last(); 
-    }
-    
-    function get_pass(){ echo $this->random_password(); }
-    
-    function random_password() 
-    {
-        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-        $password = array(); 
-        $alpha_length = strlen($alphabet) - 1; 
-        for ($i = 0; $i < 8; $i++) 
-        {
-            $n = rand(0, $alpha_length);
-            $password[] = $alphabet[$n];
-        }
-        return implode($password); 
     }
     
         // ------ json login -------------------
@@ -56,21 +42,20 @@ class Customer extends MX_Controller
         
         $datas = (array)json_decode(file_get_contents('php://input'));
         $user = $datas['username'];
-        $pass = $datas['password'];
         
         $status = true;
         $error = null;
         $custid = null;
         $logid = null;
         
-        if ($user != null && $pass != null){
+        if ($user != null){
             
-            $res = $this->Customer_model->login($user,$pass);
+            $res = $this->Customer_model->login($user);
             if ($res == FALSE){ $status = false; $error = 'Invalid Credential..!'; }
             else{
                 
                 $logid = $this->random_password();
-                $res = $this->Customer_model->get_by_username($user)->row(); 
+                $res = $this->Customer_model->get_by_phone($user)->row(); 
                 $userid = $res->id;
                 $this->login->add($userid, $logid);
             }
@@ -93,7 +78,6 @@ class Customer extends MX_Controller
         
         $status = true;
         $error = null;
-//        $user = 'info@dswip.com';
         
         if ($user != null){
             
@@ -217,13 +201,15 @@ class Customer extends MX_Controller
             $customer = array('first_name' => strtolower($datax['name']), 
                           'phone1' => $datax['phone'],
                           'email' => $datax['email'],
-                          'password' => $datax['password'],
                           'joined' => date('Y-m-d H:i:s'), 'status' => 1,
                           'created' => date('Y-m-d H:i:s'));
 
             $this->Customer_model->add($customer);
-            $response = array('status' => true, 'error' => 'Selamat Datang '.$datax['name']); 
-            // kirim welcome message by email
+            
+            if ($this->send_confirmation_email($this->Customer_model->counter(1)) == TRUE){
+                 $response = array('status' => true, 'error' => 'Selamat Datang '.$datax['name']); 
+            }else{ $response = array('status' => true, 'error' => 'Gagal Mengirim Notifikasi');  }
+            
         }else{
             $response = array('status' => false, 'error' => 'Registrasi Gagal, Email atau No Telepon sudah terdaftar..!'); 
         }
@@ -234,7 +220,6 @@ class Customer extends MX_Controller
         ->set_output(json_encode($response))
         ->_display();
         exit;
-        
     }
     
     function edit_customer(){
@@ -311,34 +296,16 @@ class Customer extends MX_Controller
        
        $customer = $this->Customer_model->get_by_id($pid)->row();
 
+       $data['code']    = 'CUST-0'.$customer->id;
        $data['name']    = strtoupper($customer->first_name.' '.$customer->last_name);
        $data['type']    = strtoupper($customer->type);
-       $data['address'] = $customer->address;
-       $data['phone']    = $customer->phone1.' / '.$customer->phone2;
+       $data['phone']    = $customer->phone1;
        $data['email']    = $customer->email;
-       $data['password'] = $customer->password;
-       $data['zip']     = $customer->zip;
-       $data['city']    = $this->city->get_name($customer->city);
-       $data['district'] = $this->disctrict->get_name($customer->region);
        $data['joined']  = tglin($customer->joined).' / '. timein($customer->joined);
          
         // email send
-        $this->load->library('email');
-        $config['charset']  = 'utf-8';
-        $config['wordwrap'] = TRUE;
-        $config['mailtype'] = 'html';
-
-        $this->email->initialize($config);
-        $this->email->from($this->properti['email'], $this->properti['name']);
-        $this->email->to($customer->email);
-        $this->email->cc($this->properti['cc_email']); 
-        
-        $html = $this->load->view('customer_confirmation',$data,true); 
-        $this->email->subject('Customer Confirmation - '.strtoupper($customer->code));
-        $this->email->message($html);
-//        $pdfFilePath = FCPATH."/downloads/".$no.".pdf";
-
-        if (!$this->email->send()){ return false; }else{ return true;  }
+       $html = $this->load->view('customer_receipt',$data,true); 
+       return $this->notif->create($pid, $html, 0, $this->title, 'Wamenak E-Welcome - '.strtoupper($data['code']));
     }
     
 

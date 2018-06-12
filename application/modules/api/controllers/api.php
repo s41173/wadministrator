@@ -142,6 +142,63 @@ class Api extends MX_Controller {
         }
     }
     
+     // get bank list
+    public function slider(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        
+        $lib = new Product_lib();
+        $result = $lib->get_slider();
+        
+        if ($result){
+	foreach($result as $res)
+	{
+	   $output[] = array ("id" => $res->id, "name" => $res->name, "url" => $res->url, "orders" => $res->orders, 
+                              "image" => base_url().'images/slider/'.$res->image);
+	}
+        $response['content'] = $output;
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+        }
+    }
+    
+    // get otp
+    function otp(){
+        
+       $datas = (array)json_decode(file_get_contents('php://input'));
+       $sms = new Sms_lib(); 
+       $cust = new Customer_lib();
+       
+       if (isset($datas['type'])){ $code = $this->random_password(); }else{ $code = mt_rand(100,9999); }
+       
+       $stts = $sms->send($cust->get_detail($datas['customer'], 'phone1'), $this->properti['name'].' : Kode OTP : '.$code);
+       $response = array('status' => $stts, 'code' => $code);
+       $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;
+        
+    }
+    
+    private function random_password() 
+    {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+        $password = array(); 
+        $alpha_length = strlen($alphabet) - 1; 
+        for ($i = 0; $i < 8; $i++) 
+        {
+            $n = rand(0, $alpha_length);
+            $password[] = $alphabet[$n];
+        }
+        return implode($password); 
+    }
+    
 
 }
 
