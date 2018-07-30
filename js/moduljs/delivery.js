@@ -66,6 +66,16 @@ $(document).ready(function (e) {
 		return false;	
 	});
 
+	$(document).on('click','.text-tracker',function(e)
+	{	
+		e.preventDefault();
+		var element = $(this);
+		var del_id = element.attr("id");
+		var url = sites_track +"/"+ del_id;
+
+		window.location.href = url;
+	});
+
 	// fungsi jquery konfirmasi pembayaran
 	$(document).on('click','.text-confirmation',function(e)
 	{	
@@ -464,6 +474,7 @@ $(document).ready(function (e) {
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Confirmation Status"> <i class="fa fa-power-off"> </i> </a> '+
 '<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 '<a href="" class="'+received+' btn-xs text-confirmation" id="' +s[i][0]+ '" title="Deliver Status"> <i class="fa fa-truck"> </i> </a> '+
+'<a href="" class="btn btn-warning btn-xs text-tracker" id="' +s[i][0]+ '" title="Track"> <i class="fa fas-2x fa-search"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'
@@ -521,6 +532,7 @@ $(document).ready(function (e) {
 '<a href="" class="'+stts+' btn-xs primary_status" id="' +s[i][0]+ '" title="Confirmation Status"> <i class="fa fa-power-off"> </i> </a> '+
 '<a href="" class="btn btn-success btn-xs text-print" id="' +s[i][0]+ '" title="Invoice Status"> <i class="fa fa-print"> </i> </a> '+
 '<a href="" class="'+received+' btn-xs text-confirmation" id="' +s[i][0]+ '" title="Deliver Status"> <i class="fa fa-truck"> </i> </a> '+
+'<a href="" class="btn btn-warning btn-xs text-tracker" id="' +s[i][0]+ '" title="Track"> <i class="fa fas-2x fa-search"> </i> </a> '+
 '<a href="" class="btn btn-primary btn-xs text-primary" id="' +s[i][0]+ '" title=""> <i class="fa fas-2x fa-edit"> </i> </a> '+
 '<a href="#" class="btn btn-danger btn-xs text-danger" id="'+s[i][0]+'" title="delete"> <i class="fa fas-2x fa-trash"> </i> </a>'+
 '</div>'

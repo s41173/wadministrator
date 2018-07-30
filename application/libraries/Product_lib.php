@@ -147,15 +147,15 @@ class Product_lib extends Custom_Model {
     
     // api purpose
     
-    function get_poduct_based_cat($catid,$limit=100){
+    function get_poduct_based_cat($catid,$limit=5,$offset=0){
         
         $this->db->select($this->field);
         $this->db->where('deleted', $this->deleted);
         $this->db->where('publish', 1);
         $this->db->where('category', $catid);
         $this->db->order_by('orders', 'asc'); 
-        $this->db->limit($limit);
-        return $this->db->get($this->tableName)->result();
+        $this->db->limit($limit, $offset);
+        return $this->db->get($this->tableName);
     }
     
     function get_recommended($limit=100){
@@ -164,7 +164,7 @@ class Product_lib extends Custom_Model {
         $this->db->where('deleted', $this->deleted);
         $this->db->where('publish', 1);
         $this->db->where('recommended', 1);
-        $this->db->order_by('orders', 'asc'); 
+        $this->db->order_by('orders', 'desc'); 
         $this->db->limit($limit);
         return $this->db->get($this->tableName)->result();
     }

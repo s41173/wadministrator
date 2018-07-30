@@ -28,7 +28,6 @@ $(document).ready(function (e) {
 		
 	});
 	
-	
 		// fungsi ajax combo
 	$(document).on('change','#ccity,#ccity_update',function(e)
 	{	

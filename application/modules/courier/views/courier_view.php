@@ -34,21 +34,162 @@
 	var sites_edit = "<?php echo site_url('courier/update_process/');?>";
 	var sites_del  = "<?php echo site_url('courier/delete/');?>";
 	var sites_get  = "<?php echo site_url('courier/update/');?>";
+    var sites_track  = "<?php echo site_url('courier/track/');?>";
     var sites_primary = "<?php echo site_url('courier/publish/');?>";
     var sites_ajax  = "<?php echo site_url('courier/');?>";
 	var source = "<?php echo $source;?>";
 	
 </script>
+          
+<!-- map function -->
+    <!-- Place this tag in your head or just before your close body tag. -->
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAG_XxJt7OYEkXFTo9MmxC-ec73At7pwhs"></script>
+<script type="text/javascript">
+
+$(document).ready(function (e) {
+ 
+var lat = parseFloat($("#hlat").val());
+var long = parseFloat($("#hlong").val());
+    
+var sites_ajax  = "<?php echo site_url('courier/');?>";
+var iconkurir = "<?php echo base_url().'images/kurir.png';?>";
+var iconperson = "<?php echo base_url().'images/person.png';?>"; 
+var pos = setInterval(getposinterval, 10000);
+getpos();   
+function getpos() {
+      
+    $.get(sites_ajax+"/get_loc_all/", function(data, status){
+        
+        var markerx = [];  
+        var obj = JSON.parse(data);
+        
+        for (var i=0;i<obj.length;i++){
+            var cor = obj[i].coordinate.split(',');
+            markerx[i] = [obj[i].userid]; 
+            markerx[i][1] = cor[0];
+            markerx[i][2] = cor[1];
+        }
+        initMap(markerx);
+    });
+}
+    
+function getposinterval() {
+      
+    $.get(sites_ajax+"/get_loc_all/", function(data, status){
+        
+        var markerx = [];  
+        var obj = JSON.parse(data);
+        
+        for (var i=0;i<obj.length;i++){
+            var cor = obj[i].coordinate.split(',');
+            markerx[i] = [obj[i].userid]; 
+            markerx[i][1] = cor[0];
+            markerx[i][2] = cor[1];
+        }
+        addMarker(markerx);
+    });
+}
+    
+var map;
+var markers = [];
+
+function initMap(locations) {
+        var haightAshbury = {lat: lat, lng: long};
+
+        map = new google.maps.Map(document.getElementById('mapCanvas'), {
+          zoom: 12,
+          center: haightAshbury,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        // Adds a marker at the center of the map.
+        addMarker(locations);
+}
+
+      // Adds a marker to the map and push to the array.
+function addMarker(locations) {
+          
+        deleteMarkers();
+        for (count = 0; count < locations.length; count++) {
+        marker = new google.maps.Marker({
+          position: new google.maps.LatLng(locations[count][1], locations[count][2]),
+          map: map,
+          icon: iconkurir,
+          title: locations[count][0]
+        }); markers.push(marker);
+      }  
+}
+
+      // Sets the map on all markers in the array.
+      function setMapOnAll(map) {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(map);
+        }
+      }
+
+      // Removes the markers from the map, but keeps them in the array.
+      function clearMarkers() {
+        setMapOnAll(null);
+      }
+
+      // Shows any markers currently in the array.
+      function showMarkers() {
+        setMapOnAll(map);
+      }
+
+      // Deletes all markers in the array by removing references to them.
+      function deleteMarkers() {
+        clearMarkers();
+        markers = [];
+      }
+
+    
+// document ready end	
+});    
+    
+</script>
+          
+<!-- map function -->
 
           <div class="row"> 
           
             <div class="col-md-12 col-sm-12 col-xs-12">
+             
               <div class="x_panel" >
               
               <!-- xtitle -->
               <div class="x_title">
                 
-               <h2> Supplier Filter </h2>
+               <h2> Courier Map </h2>
+                
+                <ul class="nav navbar-right panel_toolbox">
+                  <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a> </li>
+                  <li><a class="close-link"><i class="fa fa-close"></i></a> </li>
+                </ul>
+                
+                <div class="clearfix"></div>
+              </div>
+              <!-- xtitle -->
+                
+    <style type="text/css">
+        #mapCanvas{ width: 100%; height: 500px; }  
+    </style>
+            
+            <input type="hidden" id="hlat" value="<?php echo $hlat; ?>">
+            <input type="hidden" id="hlong" value="<?php echo $hlong; ?>">
+            <div class="x_content" id="mapCanvas"> </div>
+
+            </div>
+             
+              <!-- batas panel map -->
+             
+              <div class="x_panel" >
+              
+              <!-- xtitle -->
+              <div class="x_title">
+                
+               <h2> Courier Filter </h2>
                 
                 <ul class="nav navbar-right panel_toolbox">
                   <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a> </li>
@@ -114,6 +255,7 @@
                <!-- links -->
     </div>                           
             </div>
+            
           </div>  
     
       

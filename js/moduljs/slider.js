@@ -89,8 +89,7 @@ $(document).ready(function (e) {
 '</div>'
 											   ]);										
 											} // End For
-											
-											
+																	
 				},
 				error: function(e){
 				   console.log(e.responseText);	

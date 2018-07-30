@@ -82,6 +82,17 @@ class Shipping_lib extends Custom_Model {
         $this->db->where('deleted', $this->deleted);
         $this->db->update($this->tableName, $val);
     }
+    
+    
+    // function to get all free courier
+    function valid_free($uid){
+        $this->db->where('courier', $uid);
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('status', 1);
+        $this->db->where('received IS NULL');
+        $num = $this->db->get($this->tableName)->num_rows();
+        if ($num > 0){ return FALSE; }else{ return TRUE; }
+    }
 
 }
 

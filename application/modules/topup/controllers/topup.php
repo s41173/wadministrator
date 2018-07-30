@@ -46,7 +46,7 @@ class Topup extends MX_Controller
             $topup = array('customer' => $datas['customer'], 
             'dates' => date('Y-m-d H:i:s'),
             'type' => $datas['type'], 'amount' => $datas['amount'],
-            'courier' => $datas['courier'], 'log' => $this->session->userdata('log'),
+            'courier' => $datas['courier'], 'log' => '0',
             'created' => date('Y-m-d H:i:s'));
             
         }elseif($datas['type'] == '2'){
@@ -54,13 +54,16 @@ class Topup extends MX_Controller
             'dates' => date('Y-m-d H:i:s'),
             'type' => $datas['type'], 'amount' => $datas['amount'],
             'bank' => $datas['bank'], 'sender_name' => $datas['sender_name'], 'sender_acc' => $datas['sender_acc'], 'sender_bank' => $datas['sender_bank'],
-            'log' => $this->session->userdata('log'),
+            'log' => '0',
             'created' => date('Y-m-d H:i:s'));
         }
 
         $this->Topup_model->add($topup);
-        $error = "Topup berhasil..";
+        if ($datas['type'] == '0'){ $error = "Topup berhasil : ".date('d-m-Y H:i:s'); }
+        if ($datas['type'] == '1'){ $error = "Topup berhasil : ".date('d-m-Y H:i:s'); }
+        if ($datas['type'] == '2'){ $error = "Topup berhasil | ".date('d-m-Y H:i:s'); }
             
+        // kirim konfirmasi ke wamenak sms bahwa customer telah melakukan topup by trf
         // if ($this->send_confirmation_email($val->id) == https://web.facebook.com/?ref=tn_tnmnTRUE){ $status = true; $error = "Password has been sent to your email."; }else{ $status = false; $error = 'Email Not Sent..!'; }
         
         $response = array('status' => $status, 'error' => $error); 
@@ -247,10 +250,11 @@ class Topup extends MX_Controller
             
             $sms = $this->properti['name']." : Topup berhasil senilai ".idr_format($val->amount)." pada tanggal ".tglin($val->dates).' '.timein($val->dates).". No transaksi : TOP-0".$val->id;
             $html = $this->invoice($uid);
-            $notifemail = $this->notif->create($val->customer, $html, 0, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
-            $notifsms = $this->notif->create($val->customer, $sms, 1, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
+            $notifemail = $this->notif->create($val->customer, $html, 0, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id),0);
+            $notifsms = $this->notif->create($val->customer, $sms, 1, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id),0);
+            $notifpush = $this->notif->create($val->customer, $sms, 3, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
             
-            if ($notifemail == true && $notifsms == true){  echo 'true|Confirmation Success...!'; }else{ echo 'warning|Notifications failed to send'; }
+            if ($notifemail == true && $notifsms == true && $notifpush == true){  echo 'true|Confirmation Success...!'; }else{ echo 'warning|Notifications failed to send'; }
           } catch (Exception $e) { echo 'error|'.$e->getMessage(); }
            
        }

@@ -14,7 +14,7 @@ class Sales_model extends Custom_Model
     }
     
     protected $field = array('id', 'code', 'dates', 'cust_id', 'amount', 'tax', 'cost', 'discount', 'total', 'shipping',                            
-                             'payment_type', 'redeem', 'redeem_date', 'canceled', 'approved', 'log', 'created', 'updated', 'deleted');
+                             'payment_type', 'redeem', 'redeem_date', 'canceled', 'approved', 'log', 'booked', 'booked_by', 'created', 'updated', 'deleted');
     protected $com;
     
     function get_last($limit, $offset=null)
@@ -38,13 +38,27 @@ class Sales_model extends Custom_Model
         return $this->db->get(); 
     }
     
-    function search_json($agent=null,$confirm=null,$limit=0)
+    function search_json($customer=null,$confirm=null,$limit=0,$offset=0)
     {   
         $this->db->select($this->field);
         $this->db->from($this->tableName); 
         $this->db->where('deleted', $this->deleted);
-        $this->db->where('agent_id', $agent);
+        $this->db->where('cust_id', $customer);
         $this->db->where('approved', $confirm);
+        $this->db->where('canceled IS NULL');
+        $this->db->limit($limit, $offset);
+        $this->db->order_by('dates', 'desc'); 
+        return $this->db->get(); 
+    }
+    
+    function search_canceled_json($customer=null,$limit=0)
+    {   
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('cust_id', $customer);
+        $this->db->where('approved', 0);
+        $this->db->where('canceled IS NOT NULL');
         $this->db->limit($limit);
         $this->db->order_by('dates', 'desc'); 
         return $this->db->get(); 
@@ -135,6 +149,16 @@ class Sales_model extends Custom_Model
         $this->db->where('sales.approved', 1);
         $query = $this->db->get()->row_array();
         return intval($query['qtys']);
+    }
+    
+     function get_ongoing(){
+        
+        $this->db->where('approved', 0);
+        $this->db->where('booked', 0);
+        $this->db->where('canceled', null);
+        $this->db->where('deleted', $this->deleted);
+        $this->db->limit(1);
+        return $this->db->get($this->tableName)->row();
     }
 
 }

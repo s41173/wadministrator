@@ -11,11 +11,11 @@ class Customer_login_lib
 
     private $ci,$tableName,$deleted;
     
-    public function add($user=0, $log=0)
+    public function add($user=0, $log=0, $device=null)
     {
-        $trans = array('userid' => $user, 'log' => $log);
+        $trans = array('userid' => $user, 'log' => $log, 'device' => $device);
         if ($this->cek($user) == TRUE){ $this->ci->db->insert($this->tableName, $trans); }
-        else { $this->edit($user,$log); }
+        else { $this->edit($user,$log,$device); }
     }
 
     private function cek($user)
@@ -25,9 +25,9 @@ class Customer_login_lib
         if ($num > 0){ return FALSE; }else { return TRUE; }
     }
     
-    private function edit($user,$log)
+    private function edit($user,$log,$device=null)
     {
-        $trans = array('log' => $log);
+        $trans = array('log' => $log, 'device' => $device);
         $this->ci->db->where('userid', $user);
         $this->ci->db->update($this->tableName, $trans);
     }
@@ -40,6 +40,20 @@ class Customer_login_lib
        if ($num > 0){ return TRUE; }else { return FALSE; }
     }
     
+    function get_by_userid($user)
+    {
+       $this->ci->db->where('userid', $user);
+       $res = $this->ci->db->get($this->tableName)->row(); 
+       return $res->log;
+    }
+    
+    function get_device($user){
+       
+        $this->ci->db->where('userid', $user);
+       $res = $this->ci->db->get($this->tableName)->row(); 
+       return $res->device;
+    }
+     
 }
 
 

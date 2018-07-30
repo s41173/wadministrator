@@ -67,6 +67,19 @@ class Customer_lib extends Custom_Model {
         return $val;
     }
     
+     function get_active_device(){
+        
+        $this->db->select('device');
+        $this->db->from('customer, customer_login_status');
+        $this->db->where('customer.id = customer_login_status.userid');
+        $this->db->where('customer.deleted', $this->deleted);
+        $this->db->where('customer.status', 1);
+        $this->db->where('customer_login_status.device IS NOT NULL');
+//        $this->db->where('customer_login_status.device <> undefined');
+        $this->db->where_not_in('customer_login_status.device', 'undefined');
+        return $this->db->get();
+    }
+    
     function get_details($id)
     {
        $this->db->where('id', $id);

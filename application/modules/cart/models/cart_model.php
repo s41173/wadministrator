@@ -16,6 +16,37 @@ class Cart_model extends Custom_Model
     protected $field = array('id', 'customer', 'product_id', 'qty', 'tax', 'amount', 'price', 'attribute', 'description' , 'publish', 'created');
     protected $com;
     
+    function create($cart){
+        
+        $result = $this->cek($cart['customer'], $cart['product_id'], $cart['description']);
+        
+        if ($result == 'TRUE'){ 
+            $this->add($cart); 
+        }else{
+           $this->edit_qty($result, $cart['qty']);
+        }
+    }
+    
+    function edit_qty($uid,$qty=0){
+        
+        $res = $this->get_by_id($uid)->row();
+        $oldqty = intval($res->qty+$qty);
+        $amount = intval($res->price)*intval($oldqty);
+        $val = array('amount' => $amount, 'qty' => $oldqty);
+        $this->db->where('id', $uid);
+        $this->db->update($this->tableName, $val);
+    }
+    
+    function cek($cust,$pid,$desc){
+        
+        $this->db->where('customer', $cust);
+        $this->db->where('product_id', $pid);
+        $this->db->where('description', $desc);
+        $num = $this->db->get($this->tableName)->num_rows();
+        $res = $this->db->get($this->tableName)->row();
+        if ($num > 0){ return $res->id; }else{ return 'TRUE'; }
+    }
+    
     function get_by_customer($customer=null)
     {
         $this->db->select($this->field);

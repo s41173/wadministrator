@@ -100,7 +100,7 @@ $(document).ready(function (e) {
 		e.preventDefault();
 		var value = $(this).val();
 
-		if (value == "sms"){ 
+		if (value == "sms" || value == "notif"){ 
 			$("#tsmsbox").show();
 			$("#tckbox").hide();
 		}else { 

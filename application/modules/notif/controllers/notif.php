@@ -9,7 +9,7 @@ class Notif extends MX_Controller
         $this->load->model('Notif_model', '', TRUE);
 
         $this->properti = $this->property->get();
-        $this->acl->otentikasi();
+//        $this->acl->otentikasi();
 
         $this->modul = $this->components->get(strtolower(get_class($this)));
         $this->title = strtolower(get_class($this));
@@ -18,14 +18,86 @@ class Notif extends MX_Controller
         $this->notif = new Notif_lib;
         $this->email = new Send_email();
         $this->sms = new Sms_lib();
+        $this->push = new Push_lib();
+        
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
+        
     }
 
     private $properti, $modul, $title;
-    private $role,$customer,$notif,$email,$sms;
+    private $role,$customer,$notif,$email,$sms,$push;
 
     function index()
     {
        $this->get_last(); 
+    }
+    
+    public function get_notif($customer){
+        
+        $result = $this->Notif_model->get_publish($customer)->result();
+        
+        if ($result){
+	foreach($result as $res)
+	{
+	   $output[] = array ("id" => $res->id, "subject" => $res->subject, "content" => $res->content, "reading" => $res->reading, "created" => tglincomplete($res->created).' '. timein($res->created));
+	}
+        $response['content'] = $output;
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+        }
+    }
+    
+    public function detail($uid){
+        
+        $result = $this->Notif_model->get_by_id($uid)->row();
+        if ($result){
+	
+        $output = array ("id" => $result->id, "subject" => $result->subject, "content" => $result->content, "reading" => $result->reading, "created" => tglincomplete($result->created).' '. timein($result->created));    
+            
+        $notif = array('reading' => 1);
+        $this->Notif_model->update($uid, $notif);
+        
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($output,128))
+            ->_display();
+            exit; 
+        }
+    }
+    
+    public function remove($customer){
+        
+        $notif = array('publish' => 0);
+        $this->Notif_model->update_notif($customer,$notif);
+        $response = array('status' => true); 
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    public function remove_id($uid){
+        
+        $notif = array('publish' => 0);
+        $this->Notif_model->update_notif_id($uid,$notif);
+        $response = array('status' => true); 
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
     }
      
     public function getdatatable($search=null,$customer='null',$type='null',$modul='null',$publish='null')
@@ -114,13 +186,29 @@ class Notif extends MX_Controller
         $res = false;
         
         if ($val->type == 0){
-          $res = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email Wamenak", $val->content);    
+          $res = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email", $val->content);    
         }elseif ($val->type == 1){
           $res = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
         }elseif ($val->type == 2){
-          $res1 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email Wamenak", $val->content);    
+          $res1 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email", $val->content);    
           $res2 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
           if ($res1 == true && $res2 == true){ $res = true; }
+        }
+        elseif ($val->type == 3){
+          $res = $this->push->send_device($val->customer, $val->content);    
+        }elseif ($val->type == 4){
+          $res1 = $this->push->send_device($val->customer, $val->content);    
+          $res2 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
+          if ($res1 == true && $res2 == true){ $res = true; }
+        }elseif ($val->type == 5){
+          $res1 = $this->push->send_device($val->customer, $val->content);    
+          $res2 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email", $val->content);    
+          if ($res1 == true && $res2 == true){ $res = true; }
+        }elseif ($val->type == 6){
+          $res1 = $this->push->send_device($val->customer, $val->content);    
+          $res2 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), "Support-Email", $val->content);    
+          $res3 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
+          if ($res1 == true && $res2 == true && $res3 == true){ $res = true; }
         }
         return $res;
     }

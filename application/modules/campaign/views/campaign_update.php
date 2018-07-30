@@ -106,6 +106,7 @@
            <select name="ctype" id="ctype" class="form-control">
 <option value="email"<?php echo set_select('ctype', 'email', isset($default['type']) && $default['type'] == 'email' ? TRUE : FALSE); ?>> Email </option>
 <option value="sms"<?php echo set_select('ctype', 'sms', isset($default['type']) && $default['type'] == 'sms' ? TRUE : FALSE); ?>> SMS </option>
+<option value="notif"<?php echo set_select('ctype', 'notif', isset($default['type']) && $default['type'] == 'notif' ? TRUE : FALSE); ?>> Notification </option>
            </select>
         </div>
       </div>
@@ -134,7 +135,7 @@
             <table>
                 <tr> 
  <td> <input type="checkbox" class="form-control" name="ctocustomer" value="customer" <?php echo $default['customer']; ?> > Customer &nbsp; &nbsp; </td>
- <td> <input type="checkbox" class="form-control" name="ctoagent" value="agent" <?php echo $default['agent']; ?> > Agent </td>
+ <td> <input type="checkbox" class="form-control" name="ctodriver" value="courier" <?php echo $default['courier']; ?> > Courier </td>
                 </tr>
             </table>
         </div>

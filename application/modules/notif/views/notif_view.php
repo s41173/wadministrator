@@ -92,12 +92,14 @@ $atts1 = array(
                    <option value="1"> SMS </option>
                    <option value="2"> Email SMS </option>
                    <option value="3"> Socket </option>
-                   <option value="4"> Email SMS Notif Socket </option>
+                   <option value="4"> Socket + SMS </option>
+                   <option value="5"> Socket + Email </option>
+                   <option value="6"> Email SMS Notif Socket </option>
                 </select>
               </div>   
               
               <div class="form-group">
-                  <?php $js = "class='select2_single form-control' id='ccategory' tabindex='-1' style='min-width:120px;' "; 
+                  <?php $js = "class='select2_single form-control' id='cmodul' tabindex='-1' style='min-width:120px;' "; 
 			       echo form_dropdown('cmodul', $modul, isset($default['modul']) ? $default['modul'] : '', $js); ?>
               </div>
                

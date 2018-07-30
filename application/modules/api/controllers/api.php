@@ -31,6 +31,33 @@ class Api extends MX_Controller {
        redirect('login');
    }
    
+   function get_kecamatan(){
+       
+       $offset = $this->input->post('start');
+       $limit = $this->input->post('limit');
+       
+       $this->db->select('nama, id_kabupaten');
+       $this->db->order_by('nama', 'asc'); 
+       $this->db->limit($limit, $offset);
+       $result = $this->db->get('kecamatan');
+       
+       if ($result->num_rows > 0){
+            $response = '';
+            
+            foreach ($result->result() as $res) {
+                $response .= '
+                    <div>
+                       <h2>'.$res->nama.'</h2>
+                       <p>'.$res->id_kabupaten.'</p>
+                    </div>
+                '; 
+            }
+            exit($response);
+            
+        }else{ exit('reachedMax'); }
+       
+   }
+   
    function calculate_distance(){
         
        $datax = (array)json_decode(file_get_contents('php://input')); 
@@ -67,7 +94,7 @@ class Api extends MX_Controller {
         if ($result){
 	foreach($result as $res)
 	{
-	   $output[] = array ("id" => $res->id, "name" => $res->name, "permalink" => $res->permalink, "order" => $res->orders, "image" => base_url().'images/category/'.$res->image);
+	   $output[] = array ("id" => $res->id, "name" => ucfirst($res->name), "permalink" => $res->permalink, "order" => $res->orders, "image" => base_url().'images/category/'.$res->image);
 	}
         $response['content'] = $output;
             $this->output
@@ -173,7 +200,7 @@ class Api extends MX_Controller {
        $sms = new Sms_lib(); 
        $cust = new Customer_lib();
        
-       if (isset($datas['type'])){ $code = $this->random_password(); }else{ $code = mt_rand(100,9999); }
+       if (isset($datas['type'])){ $code = random_password(); }else{ $code = mt_rand(1000,9999); }
        
        $stts = $sms->send($cust->get_detail($datas['customer'], 'phone1'), $this->properti['name'].' : Kode OTP : '.$code);
        $response = array('status' => $stts, 'code' => $code);
@@ -182,21 +209,62 @@ class Api extends MX_Controller {
         ->set_content_type('application/json', 'utf-8')
         ->set_output(json_encode($response, 128))
         ->_display();
-        exit;
-        
+        exit;   
     }
     
-    private function random_password() 
-    {
-        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-        $password = array(); 
-        $alpha_length = strlen($alphabet) - 1; 
-        for ($i = 0; $i < 8; $i++) 
-        {
-            $n = rand(0, $alpha_length);
-            $password[] = $alphabet[$n];
-        }
-        return implode($password); 
+    function send_otp(){
+        
+       $datas = (array)json_decode(file_get_contents('php://input'));
+       $sms = new Sms_lib(); 
+       
+       if (isset($datas['type'])){ $code = random_password(); }else{ $code = mt_rand(1000,9999); }
+       
+       $stts = $sms->send($datas['phone'], $this->properti['name'].' : Kode OTP : '.$code);
+       $response = array('status' => $stts, 'code' => $code);
+       $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;   
+    }
+    
+     function resend_otp(){
+        
+       $datas = (array)json_decode(file_get_contents('php://input'));
+       $sms = new Sms_lib(); 
+       $login = new Customer_login_lib();
+       $cust = new Customer_lib();
+       
+       $code = $login->get_by_userid($datas['customer']);
+       
+       $stts = $sms->send($cust->get_detail($datas['customer'], 'phone1'), $this->properti['name'].' : Kode OTP : '.$code);
+       $response = array('status' => $stts, 'code' => $code);
+       $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;   
+    }
+    
+    function resend_otp_driver(){
+        
+       $datas = (array)json_decode(file_get_contents('php://input'));
+       $sms = new Sms_lib(); 
+       $login = new Courier_login_lib();
+       $cust = new Courier_lib();
+       
+       $code = $login->get_by_userid($datas['driver']);
+       
+       $stts = $sms->send($cust->get_detail($datas['driver'], 'phone'), $this->properti['name'].' : Kode OTP : '.$code);
+       $response = array('status' => $stts, 'code' => $code);
+       $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;   
     }
     
 

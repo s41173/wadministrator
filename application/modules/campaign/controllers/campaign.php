@@ -16,12 +16,13 @@ class Campaign extends MX_Controller
         $this->role = new Role_lib();
         $this->language = new Language_lib();
         $this->customer = new Customer_lib();
-        $this->agent = new Agent_lib();
         $this->sms = new Sms_lib();
+        $this->push = new Push_lib();
+        $this->email = new Send_email();
     }
 
-    private $properti, $modul, $title, $article, $sms;
-    private $role, $category, $language, $customer,$agent;
+    private $properti, $modul, $title, $sms, $push;
+    private $role, $category, $language, $customer,$email;
 
     function index()
     {
@@ -180,25 +181,24 @@ class Campaign extends MX_Controller
             $data['link'] = array('link_back' => anchor('admin/','<span>back</span>', array('class' => 'back')));
 
             // Form validation
-            $this->form_validation->set_rules('ctocustomer', 'Customer Recipient', 'callback_valid_recipient['.$this->input->post('ctoagent').']');
-            $this->form_validation->set_rules('ctoagent', 'Agent Recipient', '');
+            $this->form_validation->set_rules('ctocustomer', 'Customer Recipient', 'callback_valid_recipient['.$this->input->post('ctocourier').']');
+            $this->form_validation->set_rules('ctodriver', 'Driver Recipient', '');
             $this->form_validation->set_rules('ccategory', 'Article Category', 'callback_valid_category['.$this->input->post('tcategory').']');
             $this->form_validation->set_rules('tdesc', 'Article Content', '');
             $this->form_validation->set_rules('ttitle', 'Subject', 'required');
 
             if ($this->form_validation->run($this) == TRUE)
             {  
-                if ($this->input->post('ctocustomer') != "" && $this->input->post('ctoagent') != ""){ 
-                    $reicipt = $this->input->post('ctocustomer').','.$this->input->post('ctoagent');
-                }elseif ( $this->input->post('ctocustomer') != "" && $this->input->post('ctoagent') == "" ){
+                if ($this->input->post('ctocustomer') != "" && $this->input->post('ctodriver') != ""){ 
+                    $reicipt = $this->input->post('ctocustomer').','.$this->input->post('ctodriver');
+                }elseif ( $this->input->post('ctocustomer') != "" && $this->input->post('ctodriver') == "" ){
                     $reicipt = $this->input->post('ctocustomer');
-                }elseif ( $this->input->post('ctoagent') == "" ){ $reicipt = $this->input->post('ctoagent'); }
-                
+                }elseif ( $this->input->post('ctodriver') == "" ){ $reicipt = $this->input->post('ctodriver'); }
                 if ($this->input->post('tcategory') != ""){ $category = $this->input->post('tcategory'); }else{
                     $category = $this->input->post('ccategory');
                 }
                 
-                if ($this->input->post('ctype') == 'sms'){ $content = $this->input->post('tdesc'); }else{ $content = $this->input->post('tdescemail'); }
+                if ($this->input->post('ctype') == 'sms' || $this->input->post('ctype') == 'notif'){ $content = $this->input->post('tdesc'); }else{ $content = $this->input->post('tdescemail'); }
                 
                 $campaign = array(
                 'email_to' => $reicipt,
@@ -260,10 +260,10 @@ class Campaign extends MX_Controller
         
         $val1=''; $val2='';
         $to = explode(',', $campaign->email_to);
-        if ($to[0] == 'agent'){ $val1 = 'checked'; }elseif($to[0] == 'customer'){ $val2 = 'checked'; }
-        if (isset($to[1]) && $to[1] == 'customer'){ $val2 = 'checked'; }elseif(isset($to[1]) && $to[1] == 'agent'){ $val1 = 'checked'; }
+        if ($to[0] == 'courier'){ $val1 = 'checked'; }elseif($to[0] == 'customer'){ $val2 = 'checked'; }
+        if (isset($to[1]) && $to[1] == 'customer'){ $val2 = 'checked'; }elseif(isset($to[1]) && $to[1] == 'courier'){ $val1 = 'checked'; }
         
-        $data['default']['agent'] = $val1;
+        $data['default']['courier'] = $val1;
         $data['default']['customer'] = $val2;
         $data['default']['desc'] = $campaign->content;
         
@@ -326,25 +326,25 @@ class Campaign extends MX_Controller
 	$data['link'] = array('link_back' => anchor('admin/','<span>back</span>', array('class' => 'back')));
 
 	// Form validation
-        $this->form_validation->set_rules('ctocustomer', 'Customer Recipient', 'callback_valid_recipient['.$this->input->post('ctoagent').']');
-        $this->form_validation->set_rules('ctoagent', 'Agent Recipient', '');
+        $this->form_validation->set_rules('ctocustomer', 'Customer Recipient', 'callback_valid_recipient['.$this->input->post('ctodriver').']');
+        $this->form_validation->set_rules('ctodriver', 'Courier Recipient', '');
         $this->form_validation->set_rules('ccategory', 'Article Category', 'callback_valid_category['.$this->input->post('tcategory').']');
         $this->form_validation->set_rules('tdesc', 'Article Content', '');
         $this->form_validation->set_rules('ttitle', 'Subject', 'required');
 
         if ($this->form_validation->run($this) == TRUE)
         {
-            if ($this->input->post('ctocustomer') != "" && $this->input->post('ctoagent') != ""){ 
-                $reicipt = $this->input->post('ctocustomer').','.$this->input->post('ctoagent');
-            }elseif ( $this->input->post('ctocustomer') != "" && $this->input->post('ctoagent') == "" ){
+            if ($this->input->post('ctocustomer') != "" && $this->input->post('ctodriver') != ""){ 
+                $reicipt = $this->input->post('ctocustomer').','.$this->input->post('ctodriver');
+            }elseif ( $this->input->post('ctocustomer') != "" && $this->input->post('ctodriver') == "" ){
                 $reicipt = $this->input->post('ctocustomer');
-            }elseif ( $this->input->post('ctoagent') != "" && $this->input->post('ctocustomer') == "" ){ $reicipt = $this->input->post('ctoagent'); }
+            }elseif ( $this->input->post('ctodriver') != "" && $this->input->post('ctocustomer') == "" ){ $reicipt = $this->input->post('ctodriver'); }
 
             if ($this->input->post('tcategory') != ""){ $category = $this->input->post('tcategory'); }else{
                 $category = $this->input->post('ccategory');
             }
                 
-            if ($this->input->post('ctype') == 'sms'){ $content = $this->input->post('tdesc'); }else{ $content = $this->input->post('tdescemail'); }
+            if ($this->input->post('ctype') == 'sms' || $this->input->post('ctype') == 'notif'){ $content = $this->input->post('tdesc'); }else{ $content = $this->input->post('tdescemail'); }
             
             $campaign = array(
                 'email_to' => $reicipt,
@@ -380,6 +380,7 @@ class Campaign extends MX_Controller
                // sending campaign 
                if ($campaign->type == 'email'){ $stts = $this->mail_campaign($uid); }
                elseif ($campaign->type == 'sms'){ $stts = $this->mail_sms($uid); }
+               elseif ($campaign->type == 'notif'){ $stts = $this->mail_notif($uid); }
             }
             
             if ($stts == true){
@@ -397,17 +398,48 @@ class Campaign extends MX_Controller
     {
        $hasil = array();
        $i=0;
-       if ($val == 'customer'){ $result = $this->customer->get_cust_type('customer'); 
+       if ($val == 'customer'){ 
+           
+           if ($type == 'notif'){
+               $result = $this->customer->get_active_device()->result(); 
+           }else{
+                $result = $this->customer->get_cust_type('customer');     
+           }
+           
            foreach ($result as $res) {
-             if ($type == 'email'){ $hasil[$i] = $res->email;  }else{ $hasil[$i] = $res->phone1; } $i++; 
+              if ($type == 'email'){ $hasil[$i] = $res->email;  }
+              elseif ($type == 'sms'){ $hasil[$i] = $res->phone1; } 
+              elseif ($type == 'notif'){ $hasil[$i] = $res->device; }
+              $i++;   
            } 
        }
-       elseif ($val == 'agent'){ $result = $this->agent->get_agent_type(); 
-           foreach ($result as $res) {
-              if ($type == 'email'){ $hasil[$i] = $res->email;  }else{ $hasil[$i] = $res->phone1; } $i++; 
-           } 
-       }
+//       elseif ($val == 'courier'){ $result = $this->agent->get_agent_type(); 
+//           foreach ($result as $res) {
+//              if ($type == 'email'){ $hasil[$i] = $res->email;  }else{ $hasil[$i] = $res->phone1; } $i++; 
+//           } 
+//       }
        return $hasil;
+    }
+    
+    private function mail_notif($pid)
+    {   
+        // property display
+       $data['p_logo'] = $this->properti['logo'];
+       $data['p_name'] = $this->properti['name'];
+       $data['p_site_name'] = $this->properti['sitename'];
+       $data['p_email'] = $this->properti['email'];
+
+       $campaign = $this->Campaign_model->get_by_id($pid)->row();
+       $res = explode(',', $campaign->email_to);
+       $val1 = array(); $val2 = array();
+       
+       if (count($res) == 1){ $val1 = $this->get_customer_type($res[0],'notif'); }
+       else if (count($res) == 2){ $val1 = $this->get_customer_type($res[0],'notif'); $val2 = $this->get_customer_type($res[1],'notif'); }
+       
+       $to = array_merge($val1,$val2);
+//       print_r(array_values($to));
+        
+       return $this->push->send_multiple_device($to, $campaign->content);  
     }
     
     private function mail_sms($pid)
@@ -445,13 +477,13 @@ class Campaign extends MX_Controller
 
        $campaign = $this->Campaign_model->get_by_id($pid)->row();
        $res = explode(',', $campaign->email_to);
+       
        $val1 = array(); $val2 = array();
        
        if (count($res) == 1){ $val1 = $this->get_customer_type($res[0]); }
        else if (count($res) == 2){ $val1 = $this->get_customer_type($res[0]); $val2 = $this->get_customer_type($res[1]); }
        
        $to = array_merge($val1,$val2);
-//       print_r(array_values($to));
        
        $data['from'] = $data['p_email'];
        $data['to'] = $campaign->email_to;
@@ -460,28 +492,10 @@ class Campaign extends MX_Controller
        $data['article'] = $campaign->subject;
        $data['dates'] = tglin($campaign->dates).' - '. timein($campaign->dates);
        $data['content'] = $campaign->content;
-      
        $html = $this->load->view('campaign_invoice_email',$data,true);
-//       $html = $this->load->view('order_email',$data,true);
         
         // email send
-        $this->load->library('email');
-        $config['charset']  = 'utf-8';
-        $config['wordwrap'] = TRUE;
-        $config['mailtype'] = 'html';
-
-        $this->email->initialize($config);
-        $this->email->from($data['p_email'], $data['p_name']);
-        $this->email->to($to);
-        $this->email->cc($this->properti['cc_email']); 
-
-        $this->email->subject($campaign->subject);
-        $this->email->message($html);
-//        $pdfFilePath = FCPATH."/downloads/".$no.".pdf";
-
-        if (!$this->email->send()){ return false; }else{ return true;  }
-//        $this->email->send();
-//        echo $this->email->print_debugger();
+        return $this->email->send_many($to, $campaign->subject, $html);
     }
     
     function report_process()

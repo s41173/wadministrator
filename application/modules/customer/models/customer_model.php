@@ -83,6 +83,15 @@ class Customer_model extends Custom_Model
         if ($res > 0){ return TRUE; }else{ return FALSE; }
     }
     
+    function cek_user_phone($username){
+        
+        $this->db->select($this->field);
+        $this->db->where('phone1', $username);
+        $this->db->where('deleted', $this->deleted);
+        $res = $this->db->get($this->tableName)->num_rows();
+        if ($res > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
     function valid_customer($email,$phone1){
         
         $this->db->select($this->field);

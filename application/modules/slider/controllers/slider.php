@@ -293,7 +293,7 @@ class Slider extends MX_Controller
             }
             else
             {
-                $this->remove_image($this->session->userdata('langid'));
+//                $this->remove_image($this->session->userdata('langid'));
                 $info = $this->upload->data();
                 $slider = array('name' => $this->input->post('tname'), 'url' => $this->input->post('turl'),
                                 'orders' => $this->input->post('torder'),

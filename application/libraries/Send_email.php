@@ -14,6 +14,34 @@ class Send_email extends Custom_Model {
 
     private $ci;
     private $property;
+    
+    public function send_many($to=null,$subject=null,$mess=null,$type='html')
+    {
+        $this->load->library('email');
+        $this->property = $this->ci->property->get();
+
+        $config['charset'] = 'iso-8859-1';
+        $config['wordwrap'] = TRUE;
+
+        $config['protocol']   = "smtp";
+        $config['smtp_host']  = "mail.wamenak.com";
+        $config['smtp_user']  = 'info@wamenak.com';
+        $config['smtp_pass']  = 'wamenak2018';
+        $config['smtp_port']  = '587';
+        $config['charset']  = 'utf-8';
+        $config['wordwrap'] = TRUE;
+        $config['mailtype'] = $type;
+
+        $this->email->initialize($config);
+        $this->email->from($this->property['email'], $this->property['name']);
+        $this->email->to($to);
+        $this->email->cc($this->property['cc_email']);
+        $this->email->subject($subject);
+        $this->email->message($mess);
+
+        if ($this->email->send() != TRUE) 
+        {  return $this->email->print_debugger(); }else{ return TRUE; }
+    }
 
     public function send($to=null,$subject=null,$mess=null,$type='html')
     {

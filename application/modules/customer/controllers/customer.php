@@ -45,24 +45,31 @@ class Customer extends MX_Controller
         
         $status = true;
         $error = null;
-        $custid = null;
         $logid = null;
+        $name = null;
+        $userid = null;
         
         if ($user != null){
             
-            $res = $this->Customer_model->login($user);
-            if ($res == FALSE){ $status = false; $error = 'Invalid Credential..!'; }
-            else{
-                
-                $logid = $this->random_password();
-                $res = $this->Customer_model->get_by_phone($user)->row(); 
-                $userid = $res->id;
-                $this->login->add($userid, $logid);
-            }
-            
+            if ($this->Customer_model->cek_user_phone($user) == TRUE){
+                $res = $this->Customer_model->login($user);
+                if ($res == FALSE){ $status = false; $error = 'Invalid Credential..!'; }
+                else{
+
+                    $sms = new Sms_lib();
+                    $push = new Push_lib();
+                    $logid = mt_rand(1000,9999);
+                    $res = $this->Customer_model->get_by_phone($user)->row(); 
+                    $userid = $res->id;
+                    $this->login->add($userid, $logid, $datas['device']);
+                    $sms->send($user, $this->properti['name'].' : Kode OTP : '.$logid);
+//                    $push->send_device($userid, $this->properti['name'].' : Kode OTP : '.$logid);
+                    $name = $res->first_name;
+                }
+            }else{ $status = false; $error = 'Invalid Phone Number'; }
         }else{ $status = false; $error = "Wrong format..!!"; }
         
-        $response = array('status' => $status, 'error' => $error, 'user' => $datas['username'], 'userid' => $userid, 'log' => $logid); 
+        $response = array('status' => $status, 'error' => $error, 'user' => $name, 'phone' => $user, 'userid' => $userid, 'log' => $logid); 
         $this->output
         ->set_status_header(201)
         ->set_content_type('application/json', 'utf-8')
@@ -159,38 +166,41 @@ class Customer extends MX_Controller
         
     }
     
-    function detail(){
-       
-        $datas = (array)json_decode(file_get_contents('php://input'));
-        $user = $datas['userid'];
+    function detail($user){
         
         $status = true;
         $error = null;
         
-        if ( isset($datas['userid']) ){
+        if ( isset($user) ){
             
-        $res = $this->Agent_model->get_by_id($user)->row(); 
-        $output[] = array ("id" => $res->id, "code" => strtoupper($res->code), "name" => $res->name,
-                           "type" => $res->type, "address" => $res->address, "phone" => $res->phone1.' / '.$res->phone2,
-                           "fax" => $res->fax, "email" => $res->email, "state" => $res->state, "statename" => $this->disctrict->get_province($res->state),
-                           "city" => $res->city, "cityname" => $this->city->get_name($res->city),
-                           "region" => $res->region, "regionname" => $this->disctrict->get_name($res->region), 
-                           "zip" => $res->zip, "group" => $res->groups,
-                           "image" => base_url().'images/customer/'.$res->image);
-            
-           
+        $res = $this->Customer_model->get_by_id($user)->row();
+        $output = array ("id" => $res->id, "first_name" => strtoupper($res->first_name), "last_name" => $res->last_name,
+                         "type" => $res->type, "email" => $res->email, "address" => $res->address, "phone" => $res->phone1);
+                       
         }else{ $status = false; $error = "Wrong format..!!"; }
-        
-        $stts = array('status' => $status, 'error' => $error); 
 
-        $response['content'] = $output;
-        $response['status']  = $stts;
             $this->output
             ->set_status_header(200)
             ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
+            ->set_output(json_encode($output,128))
             ->_display();
             exit; 
+    }
+    
+    function valid_customer(){
+        
+        $datax = (array)json_decode(file_get_contents('php://input')); 
+        
+        if ($this->Customer_model->valid_customer($datax['email'], $datax['phone']) == TRUE){
+            $response = array('status' => true, 'error' => null); 
+        }else{ $response = array('status' => false, 'error' => 'Email atau No Telepon Tidak Valid');  }
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
     }
     
     function register(){
@@ -205,9 +215,10 @@ class Customer extends MX_Controller
                           'created' => date('Y-m-d H:i:s'));
 
             $this->Customer_model->add($customer);
+            $this->balance->create($this->Customer_model->counter(1), $this->period->month, $this->period->year);
             
             if ($this->send_confirmation_email($this->Customer_model->counter(1)) == TRUE){
-                 $response = array('status' => true, 'error' => 'Selamat Datang '.$datax['name']); 
+                 $response = array('status' => true, 'error' => 'Registrasi Berhasil'); 
             }else{ $response = array('status' => true, 'error' => 'Gagal Mengirim Notifikasi');  }
             
         }else{
@@ -225,17 +236,17 @@ class Customer extends MX_Controller
     function edit_customer(){
         
         $datax = (array)json_decode(file_get_contents('php://input')); 
+        $status = false; $error = null; 
+        
+        if ($this->Customer_model->validating('email', $datax['email'], $datax['id']) == FALSE ){
+            $error = 'Email sudah pernah terdaftar';
+        }else{  
+            $customer = array('first_name' => strtolower($datax['fname']), 'email' => $datax['email']);
+            $status = true; $error = 'Profil Berhasil Diubah';
+            $this->Customer_model->update($datax['id'],$customer);
+        }
             
-        $customer = array('first_name' => strtolower($datax['fname']), 
-                      'last_name' => strtolower($datax['lname']), 'customer_id' => $datax['customer'],
-                      'type' => $datax['type'], 'address' => $datax['address'],
-                      'shipping_address' => $datax['ship_address'], 'phone1' => $datax['phone1'], 'phone2' => $datax['phone2'],
-                      'email' => $datax['email'], 'region' => $datax['region'],
-                      'city' => $datax['city'], 'state' => $this->city->get_province_based_city($datax['city']),
-                      'zip' => $datax['zip']);
-
-        $this->Customer_model->update($customer,$datax['id']);
-        $response = array('status' => true, 'error' => 'Data Pelanggan Berhasil Diubah'); 
+        $response = array('status' => $status, 'error' => $error); 
         
         $this->output
         ->set_status_header(201)
@@ -259,10 +270,11 @@ class Customer extends MX_Controller
             
             // balance
             $balance = $this->balance->get($datas['customer'], $this->period->month, $this->period->year);
-            $beginning = floatval($balance->beginning);
+            $beginning = @floatval($balance->beginning);
             $trans = $this->ledger->get_sum_transaction_monthly($datas['customer'],$this->period->month, $this->period->year);
             $trans = floatval($trans['vamount']);
             $balance = $beginning+$trans;
+            $balance = $trans;
             
         }else{ $status = false; $error = "Wrong format..!!"; }
         

@@ -45,6 +45,32 @@ class Courier_model extends Custom_Model
         $this->db->order_by('name', 'asc'); 
         return $this->db->get(); 
     }
+    
+    function cek_user_phone($username){
+        
+        $this->db->select($this->field);
+        $this->db->where('phone', $username);
+        $this->db->where('deleted', $this->deleted);
+        $res = $this->db->get($this->tableName)->num_rows();
+        if ($res > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
+    function login($user=null){
+        
+        $this->db->where('phone', $user);
+        $this->db->where('status', 1);
+        $this->db->limit(1);
+        $res = $this->db->get($this->tableName)->num_rows();
+        if ($res > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
+    function get_by_phone($phone=null){
+        
+        $this->db->select($this->field);
+        $this->db->where('phone', $phone);
+        $this->db->where('deleted', $this->deleted);
+        return $this->db->get($this->tableName);
+    }
 
 }
 

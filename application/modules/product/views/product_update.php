@@ -138,9 +138,12 @@
                     </td> 
                     
                     <td> 
-<input type="text" title="Article Date" class="timepicker text-center form-control" id="tstart" readonly name="tstart" style=" margin-left:20px; width:120px;" value="<?php echo isset($default['start']) ? $default['start'] : '' ?>" /> 
-<input type="text" title="Article Date" class="timepicker text-center form-control" id="tend" name="tend" readonly style=" margin-left:20px; width:120px;" value="<?php echo isset($default['end']) ? $default['end'] : '' ?>" /> 
+<input type="text" title="Article Date" class="timepicker text-center form-control" id="tstart" readonly name="tstart" style=" margin-left:20px; width:120px;" /> 
+<input type="text" title="Article Date" class="timepicker text-center form-control" id="tend" name="tend" readonly style=" margin-left:20px; width:120px;" /> <br>
                     </td> 
+                </tr>
+                <tr>
+<td colspan="3"> <input type="text" readonly class="form-control" style="width:80%;" value="<?php echo $default['start'].' - '.$default['end'] ?>"> </td>
                 </tr>
             </table>             
                

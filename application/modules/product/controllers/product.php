@@ -39,21 +39,28 @@ class Product extends MX_Controller
     // =================== API ====================
         
     // get product list based category and limit
-    public function get_list($cat,$type=null,$limit=100){
+    public function get_list($cat,$type=null,$limit=5,$start=0){
         
         $lib = new Product_lib();
         if ($type != 'recommend'){
-           $result = $lib->get_poduct_based_cat($cat,$limit);    
+           $result = $lib->get_poduct_based_cat($cat,$limit,$start)->result();
+           $num = $lib->get_poduct_based_cat($cat,$limit,$start)->num_rows();
+           
         }else{ $result = $lib->get_recommended($limit); }
         
-        
+        $output = null;
         foreach($result as $res){
             
             $qty = $this->product->get_qty($res->id);
             $output[] = array ("id" => $res->id, "sku" => $res->sku, "name" => $res->name, "order" => $res->orders, "price" => $res->price, "restricted" => $res->restricted, "qty" => $qty,  
                                "image" => base_url().'images/product/'.$res->image);
         }
-        $response['content'] = $output;
+        
+        if ($type != 'recommend'){
+           if ($num > 0){ $response['content'] = $output; }else{ $response['content'] = 'reachedMax'; }     
+        }else{ $response['content'] = $output; }
+        
+        $response['result'] = ucfirst($this->category->get_name($cat));
             $this->output
             ->set_status_header(200)
             ->set_content_type('application/json', 'utf-8')
@@ -91,6 +98,7 @@ class Product extends MX_Controller
                            "url1" => $url1, "url2" => $url2, "url3" => $url3, "url4" => $url4, 
                            "url5" => $url5, "url6" => $url6, "price" => $res->price, "restricted" => $res->restricted,
                            "qty" => $qty, "start" => $res->start, "end" => $res->end, "recommended" => $res->recommended, "orders" => $res->orders, 
+                           "description" => $res->description
                           );
          
         $response['content'] = $output;
@@ -313,6 +321,7 @@ class Product extends MX_Controller
             else
             {
                 $info = $this->upload->data();
+                $this->crop_image($info['file_name']);
                 
                 $product = array('name' => strtolower($this->input->post('tname')),
                                  'sku' => $this->input->post('tsku'), 'capital' => $this->input->post('tmodal'), 
@@ -320,7 +329,7 @@ class Product extends MX_Controller
                                  'category' => $this->input->post('ccategory'), 'supplier' => $this->input->post('csupplier'),
                                  'image' => $info['file_name'], 'created' => date('Y-m-d H:i:s'));
             }
-
+            
             $this->Product_model->add($product);
             $this->session->set_flashdata('message', "One $this->title data successfully saved!");
 //            redirect($this->title);
@@ -333,6 +342,17 @@ class Product extends MX_Controller
         else{ echo "error|".validation_errors(); }
         }else { echo "error|Sorry, you do not have the right to edit $this->title component..!"; }
 
+    }
+    
+    private function crop_image($filename){
+        
+        $config['image_library'] = 'gd2';
+        $config['source_image'] = './images/product/'.$filename;
+        $config['maintain_ratio'] = TRUE;
+        $config['height']	= 250;
+
+        $this->load->library('image_lib', $config); 
+        $this->image_lib->resize();
     }
     
     private function cek_tick($val)
@@ -740,7 +760,7 @@ class Product extends MX_Controller
                 else
                 {
                     $info = $this->upload->data();
-
+                    $this->crop_image($info['file_name']);
                     $product = array('name' => strtolower($this->input->post('tname')), 'url_type' => $this->input->post('curl'),
                                      'sku' => $this->input->post('tsku'), 'start' => $start, 'end' => $end, 'qty' => $qty, 
                                      'restricted' => $this->input->post('crestrict'), 'capital' => $this->input->post('tmodal'), 'price' => $this->input->post('tprice'),

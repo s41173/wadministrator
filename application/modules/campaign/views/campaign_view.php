@@ -8,7 +8,7 @@
 <link href="<?php echo base_url(); ?>js/datatables/dataTables.tableTools.css" rel="stylesheet" type="text/css" />
 <link href="<?php echo base_url(); ?>css/icheck/flat/green.css" rel="stylesheet" type="text/css">
 
-<script src="<?php echo base_url(); ?>js/moduljs/xcampaign.js"></script>
+<script src="<?php echo base_url(); ?>js/moduljs/campaign.js"></script>
 <script src="<?php echo base_url(); ?>js-old/register.js"></script>
 
 <!-- Date time picker -->
@@ -61,6 +61,7 @@
                  <select name="ctype" id="ctype" class="select2_single form-control" style="min-width:150px;">
                    <option value="email"> Email </option>
                    <option value="sms"> SMS </option>
+                   <option value="notif"> Push Notification </option>
                 </select>
               </div>
               

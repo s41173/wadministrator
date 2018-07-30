@@ -21,6 +21,13 @@ class Cart_lib extends Main_model {
         $this->db->from($this->tableName); 
         return $this->db->get(); 
     }
+    
+     function delete_by_customer($customer=null,$publish=1){
+        
+        $this->db->where('customer', $customer);
+        $this->db->where('publish', $publish);
+        $this->db->delete($this->tableName);
+    }
 
 
 }

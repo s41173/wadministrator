@@ -12,17 +12,20 @@ class Notif_lib extends Custom_Model {
         $this->sms = new Sms_lib();
         $this->email = new Send_email();
         $this->customer = new Customer_lib();
+        $this->push = new Push_lib();
     }
 
-    private $ci,$email,$sms,$customer;
-    protected $field = array('id', 'customer', 'subject', 'content', 'type', 'reading', 'modul', 'created', 'deleted');
+    private $ci,$email,$sms,$customer,$push;
+    protected $field = array('id', 'customer', 'subject', 'content', 'type', 'reading', 'modul', 'status', 'publish', 'created', 'deleted');
     
     /*
         0 = email
         1= sms
         2 = email + sms
         3 = notif socket
-        4 = email + sms+ notif socket
+        4 = socket + SMS
+        5 = email + notif socket
+        6 = email + sms+ notif socket
     */
     
     function get_type($val=0){
@@ -32,8 +35,10 @@ class Notif_lib extends Custom_Model {
             case 0: $res = 'Email'; break;
             case 1: $res = 'SMS'; break;
             case 2: $res = 'Email + SMS'; break;
-            case 3: $res = 'Notif Socket'; break;
-            case 4: $res = 'Email + SMS + Socket'; break;
+            case 3: $res = 'Socket'; break;
+            case 4: $res = 'Socket + SMS'; break;
+            case 5: $res = 'Email + Socket'; break;
+            case 6: $res = 'Email + SMS + Socket'; break;
         }
         return $res;
     }
@@ -50,9 +55,9 @@ class Notif_lib extends Custom_Model {
         return $this->db->get(); 
     }
     
-    function create($customer, $content, $type, $modul='', $subject='')
+    function create($customer, $content, $type, $modul='', $subject='', $publish=1)
     {
-        $journal = array('customer' => $customer, 'subject' => $subject, 'content' => $content, 'type' => $type, 'modul' => $modul, 'status' => 1, 'created' => date('Y-m-d H:i:s'));
+        $journal = array('customer' => $customer, 'subject' => $subject, 'content' => $content, 'type' => $type, 'modul' => $modul, 'status' => 1, 'publish' => $publish, 'created' => date('Y-m-d H:i:s'));
         if ($this->db->insert($this->tableName, $journal) == TRUE){
             $this->send_notif($this->max());
             return TRUE;
@@ -94,6 +99,24 @@ class Notif_lib extends Custom_Model {
           $res1 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), $val->subject, $val->content);    
           $res2 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
           if ($res1 == true && $res2 == true){ $res = true; }
+        }elseif ($val->type == 3){
+          $res = $this->push->send_device($val->customer, $val->content);
+          
+        }elseif ($val->type == 4){
+          $res = $this->push->send_device($val->customer, $val->content);
+          $res1 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
+          if ($res == true && $res1 == true){ $res = true; }
+          
+        }elseif ($val->type == 5){
+          $res = $this->push->send_device($val->customer, $val->content);
+          $res1 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), $val->subject, $val->content);    
+          if ($res == true && $res1 == true){ $res = true; }
+          
+        }elseif ($val->type == 6){
+          $res1 = $this->email->send(strtolower($this->customer->get_detail($val->customer, 'email')), $val->subject, $val->content);    
+          $res2 = $this->sms->send($this->customer->get_detail($val->customer, 'phone1'), $val->content);  
+          $res3 = $this->push->send_device($val->customer, $val->content);
+          if ($res1 == true && $res2 == true && $res3 == true){ $res = true; }
         }
         return $res;
     }

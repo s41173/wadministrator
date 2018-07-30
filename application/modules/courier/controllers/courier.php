@@ -9,19 +9,164 @@ class Courier extends MX_Controller
         $this->load->model('Courier_model', '', TRUE);
 
         $this->properti = $this->property->get();
-        $this->acl->otentikasi();
+//        $this->acl->otentikasi();
 
         $this->modul = $this->components->get(strtolower(get_class($this)));
         $this->title = strtolower(get_class($this));
         $this->role = new Role_lib();
+        $this->courier = new Courier_lib();
+        $this->shipping = new Shipping_lib();
+        $this->login = new Courier_login_lib();
+        
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
     }
 
     private $properti, $modul, $title;
-    private $role;
+    private $role, $courier,$shipping,$login;
 
-    function index()
+    function index(){
+      $this->get_last();   
+    }
+    
+    function payment_gateway()
     {
-       $this->get_last(); 
+        
+    $merchantCode = 'D4151'; // from duitku
+    $merchantKey = 'f6e3ac7956e8a6b5cb3720a9814d1415'; // from duitku
+    $paymentAmount = '40000';
+    $paymentMethod = 'VC'; // WW = duitku wallet, VC = Credit Card, MY = Mandiri Clickpay, BK = BCA KlikPay
+    $merchantOrderId = time(); // from merchant, unique
+    $productDetails = 'Test Pay with duitku';
+    $email = 'sanjaya.kiran@gmail.com'; // your customer email
+    $phoneNumber = '0812288014410'; // your customer phone number (optional)
+    $additionalParam = ''; // optional
+    $merchantUserInfo = ''; // optional
+    $callbackUrl = 'http://wamenak.com/callback'; // url for callback
+    $returnUrl = 'http://wamenak.com/return'; // url for redirect
+
+    $signature = md5($merchantCode . $merchantOrderId . $paymentAmount . $merchantKey);
+
+    $item1 = array(
+        'name' => 'Test Item 1',
+        'price' => 10000,
+        'quantity' => 1);
+
+    $item2 = array(
+        'name' => 'Test Item 2',
+        'price' => 30000,
+        'quantity' => 3);
+
+    $itemDetails = array(
+        $item1, $item2
+    );
+
+    $params = array(
+        'merchantCode' => $merchantCode,
+        'paymentAmount' => $paymentAmount,
+        'paymentMethod' => $paymentMethod,
+        'merchantOrderId' => $merchantOrderId,
+        'productDetails' => $productDetails,
+        'additionalParam' => $additionalParam,
+        'merchantUserInfo' => $merchantUserInfo,
+        'email' => $email,
+        'phoneNumber' => $phoneNumber,
+        'itemDetails' => $itemDetails,
+        'callbackUrl' => $callbackUrl,
+        'returnUrl' => $returnUrl,
+        'signature' => $signature
+    );
+
+    $params_string = json_encode($params);
+    $url = 'http://sandbox.duitku.com/webapi/api/merchant/inquiry'; // Sandbox
+    // $url = 'https://passport.duitku.com/webapi/api/merchant/inquiry'; // Production
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url); 
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $params_string);                                                                  
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);                                                                      
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(                                                                          
+        'Content-Type: application/json',                                                                                
+        'Content-Length: ' . strlen($params_string))                                                                       
+    );   
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+    //execute post
+    $request = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if($httpCode == 200)
+    {
+        $result = json_decode($request, true);
+        print_r($result);
+//        header('location: '. $result['paymentUrl']);
+//        echo "paymentUrl :". $result['paymentUrl'] . "<br />";
+//        echo "merchantCode :". $result['merchantCode'] . "<br />";
+//        echo "reference :". $result['reference'] . "<br />";
+    }
+    else
+        echo $httpCode;
+        
+    }
+    
+    // ======= ajax =======================
+    function get_loc($userid=null){
+        echo $this->login->get_coordinate($userid);
+    }
+    
+    function get_loc_all(){
+        $result = $this->login->get_coordinate_all()->result();
+        foreach($result as $res){   
+            
+           if ($this->shipping->valid_free($res->userid) == TRUE){
+             $output[] = array ("userid" => $this->courier->get_detail($res->userid, 'name'), "coordinate" => $res->coordinate);     
+           }
+	} 
+
+       echo json_encode($output, 128); 
+    }
+    
+    // ======= ajax =======================
+    
+    function otentikasi(){
+       
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['userid'];
+        $log = $datas['log'];
+        
+        $status = true;
+        $error = null;
+        
+        if ( isset($datas['userid']) && isset($datas['log']) ){
+           if ( $this->login->valid($user, $log) == FALSE ){ $status = false; $error = "user already login..!!"; }      
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    function post_loc(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $cor = $datas['coordinate'];
+        $user = $datas['userid'];
+        $this->login->post_coordinate($user, $cor);
+        
+        $response = array('status' => true, 'error' => null); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+        
     }
      
     public function getdatatable($search=null,$publish='null')
@@ -48,6 +193,48 @@ class Courier extends MX_Controller
          
         }
     }
+    
+    function login(){
+        
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        $user = $datas['username'];
+        
+        $status = true;
+        $error = null;
+        $logid = null;
+        $name = null;
+        $userid = null;
+        
+        if ($user != null){
+            
+            if ($this->Courier_model->cek_user_phone($user) == TRUE){
+                $res = $this->Courier_model->login($user);
+                if ($res == FALSE){ $status = false; $error = 'Invalid Credential..!'; }
+                else{
+
+                    $sms = new Sms_lib();
+                    $push = new Push_lib();
+                    $logid = mt_rand(1000,9999);
+                    $res = $this->Courier_model->get_by_phone($user)->row(); 
+                    $userid = $res->id;
+                    $this->login->add($userid, $logid, $datas['device']);
+                    $sms->send($user, $this->properti['name'].' : Kode OTP : '.$logid);
+//                    $push->send_device($userid, $this->properti['name'].' : Kode OTP : '.$logid);
+                    $name = $res->name;
+                }
+            }else{ $status = false; $error = 'Invalid Phone Number'; }
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('status' => $status, 'error' => $error, 'user' => $name, 'phone' => $user, 'userid' => $userid, 'log' => $logid); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
+    // =============================== batas JSON API =====================================
 
     function get_last()
     {
@@ -82,6 +269,10 @@ class Courier extends MX_Controller
 
         $data['table'] = $this->table->generate();
         $data['source'] = site_url($this->title.'/getdatatable');
+        
+        $coor = explode(',', $this->properti['coordinate']);
+        $data['hlat'] = $coor[0];
+        $data['hlong'] = $coor[1];
             
         // Load absen view dengan melewatkan var $data sbgai parameter
 	$this->load->view('template', $data);
@@ -238,7 +429,6 @@ class Courier extends MX_Controller
     private function split_array($val)
     { return implode(",",$val); }
    
-
     // Fungsi update untuk menset texfield dengan nilai dari database
     function update($uid=null)
     {        

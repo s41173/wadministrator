@@ -30,21 +30,24 @@ class Cart extends MX_Controller
        $this->get(); 
     }
     
-    public function get(){
+    public function get($customer){
         
         $datas = (array)json_decode(file_get_contents('php://input'));
-        $customer = $datas['customer'];
+//        $customer = $datas['customer'];
         
         $result = $this->model->get_by_customer($customer)->result();
-        
+        $output = null;
         if ($result){
 	foreach($result as $res)
 	{
-           $product = $this->product->get_by_id($res->product_id)->row();
-	   $output[] = array ("id" => $res->id, "customer" => $res->customer, "product_id" => $res->product_id, "product" => $product->name,
+           if ($this->cek_valid($res->id, $res->product_id, $res->qty) == TRUE){
+               
+             $product = $this->product->get_by_id($res->product_id)->row();
+	     $output[] = array ("id" => $res->id, "customer" => $res->customer, "product_id" => $res->product_id, "product" => $product->name,
                               "qty" => $res->qty, "tax" => $res->tax, "amount" => $res->amount, "price" => $res->price, "attribute" => $res->attribute,
                               "description" => $res->description, "publish" => $res->publish,
-                              "image" => base_url().'images/product/'.$product->image);
+                              "image" => base_url().'images/product/'.$product->image);      
+           } 
 	}
         
         $total_p = $this->model->total($customer,1);
@@ -61,6 +64,13 @@ class Cart extends MX_Controller
             ->_display();
             exit; 
         }
+    }
+    
+    private function cek_valid($uid,$pid,$qty){
+        
+         if ( $this->product->valid_restricted($pid) == FALSE || $this->product->valid_qty($pid, $qty) == FALSE ){
+             $this->model->force_delete($uid); return FALSE;
+         }else{ return TRUE; }
     }
     
     function delete_customer()
@@ -129,16 +139,17 @@ class Cart extends MX_Controller
             if ( $this->product->valid_restricted($datax['product_id']) == FALSE ){ $error = 'Waktu pemesanan berakhir'; $status = false; }
             elseif( $this->product->valid_qty($datax['product_id'], $datax['qty']) == FALSE ) { $error = 'Stock tidak tersedia'; $status = false;  }
             else{
+                
                 $price = $this->product->get_price($datax['product_id']);
                 $amount = intval($price)*intval($datax['qty']);
-                $tax = intval($amount*0.1);
+                $tax = intval($amount*0);
 
                 $cart = array('customer' => $datax['customer'], 'product_id' => $datax['product_id'], 'qty' => $datax['qty'],
                               'price' => $price, 'attribute' => $datax['attribute'], 'description' => $datax['description'],  
                               'amount' => $amount, 'tax' => $tax,
                               'created' => date('Y-m-d H:i:s'));
 
-                $this->model->add($cart);
+                $this->model->create($cart);
             }
 
         }
@@ -165,7 +176,7 @@ class Cart extends MX_Controller
             $price = $price->price;
             
             $amount = intval($price)*intval($datax['qty']);
-            $tax = intval($amount*0.1);
+            $tax = intval($amount*0);
             $cart = array('qty' => $datax['qty'], 'amount' => $amount, 'tax' => $tax);
 
             $this->model->updateid($datax['id'],$cart);

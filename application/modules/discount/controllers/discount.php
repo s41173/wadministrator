@@ -35,16 +35,18 @@ class Discount extends MX_Controller
         
         $amount = $datas['amount'];
         $payment = $datas['payment'];
-        $date = $datas['date'];
+        $date = date('Y-m-d');
         
         $error = null;
         $result = 0;
+        $nominal = 0;
         
-        if ($date != null && $payment != null && $amount != null){ 
-           $result = $this->model->get_discount($amount,$date,$payment);
+        if ($payment != null && $amount != null){ 
+           $result = floatval($this->model->get_discount($amount,$date,$payment));
+           $nominal = floatval($result/100*$amount);
         }else{ $error = "Invalid JSON Format"; }
                 
-        $response = array('result' => $result, 'error' => $error); 
+        $response = array('result' => $result, 'amount' => $nominal, 'error' => $error); 
         $this->output
         ->set_status_header(201)
         ->set_content_type('application/json', 'utf-8')

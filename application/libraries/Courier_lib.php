@@ -20,6 +20,7 @@ class Courier_lib extends Main_model {
         if ($val){ return ucfirst($val->$type); }
     }
     
+    
     function get_type($id=null)
     {
         if ($id)
@@ -61,33 +62,7 @@ class Courier_lib extends Main_model {
         return $data;
     }
     
-    function valid_customer($email,$phone1,$phone2){
-        
-        $this->db->select($this->field);
-        $this->db->where('deleted', NULL);
-        $this->db->where('email', $email);
-        $this->db->or_where('phone1', $phone1); 
-        $this->db->or_where('phone2', $phone2); 
-        $val = $this->db->get($this->tableName)->num_rows();
-        if ($val > 0){ return FALSE; }else{ return TRUE; }
-    }
-    
-    function add_customer($users)
-    {
-        $this->db->insert($this->tableName, $users);
-    }
-    
-    function delete_customer($uid)
-    {
-        $this->db->where('id', $uid);
-        $this->db->delete($this->tableName);
-    }
-    
-    function edit_customer($customer,$id){
-        
-        $this->db->where('id', $id);
-        $this->db->update($this->tableName, $customer);
-    }
+   
     
     
 

@@ -161,7 +161,7 @@ class Delivery extends MX_Controller
         else{ 
             if ($val->status == 0){ $lng = array('status' => 1);  }else { $lng = array('status' => 0); }
             $content = $this->properti['name']." : Order ".$sales->code." sedang proses pengantaran ke alamat tujuan. Informasi lebih lanjut hubungi kami di ".$this->properti['phone1'];
-            if ($this->notif->create($sales->cust_id, $content, 1, $this->title) == true){
+            if ($this->notif->create($sales->cust_id, $content, 4, $this->title, '', 0) == true){
                
                 $this->Delivery_model->update($uid,$lng);
                 // update shipping amount sales
@@ -221,6 +221,36 @@ class Delivery extends MX_Controller
         
         $data['items'] = $this->sitem->get_last_item(0)->result();
 
+        $this->load->view('template', $data);
+    }
+    
+    
+    function track($uid=null)
+    {        
+        $data['title'] = $this->properti['name'].' | Administrator  '.ucwords($this->modul['title']);
+        $data['h2title'] = 'Tracking '.$this->modul['title'];
+        $data['main_view'] = 'courier_track';
+        $data['link'] = array('link_back' => anchor($this->title,'Back', array('class' => 'btn btn-danger')));
+        
+        $delivery = $this->Delivery_model->get_by_id($uid)->row();
+        $sales = $this->sales->get_by_id($delivery->sales_id)->row();
+        
+        $coor = explode(',',$this->properti['coordinate']);
+        $data['lat'] = $coor[0];
+        $data['long'] = $coor[1];
+        $data['curid'] = $delivery->courier;
+        $data['code'] = $sales->code;
+        $data['dates'] = tglincomplete($delivery->dates).'&nbsp;'. timein($delivery->dates);
+        $data['courier_ic'] = $this->courier->get_detail($delivery->courier, 'ic');
+        $data['courier'] = $this->courier->get_detail($delivery->courier, 'name');
+        $data['customer'] = $this->customer->get_detail($sales->cust_id, 'first_name');
+        $data['cust_phone'] = $this->customer->get_detail($sales->cust_id, 'phone1');
+        $data['cust_address'] = $delivery->destination;
+        
+        $coordelivery = explode(',',$delivery->coordinate);
+        $data['dlat'] = $coordelivery[0];
+        $data['dlong'] = $coordelivery[1];
+        
         $this->load->view('template', $data);
     }
     

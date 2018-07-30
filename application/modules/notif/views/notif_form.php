@@ -48,7 +48,9 @@ $atts1 = array(
            <option value="1"> SMS </option>
            <option value="2"> Email SMS </option>
            <option value="3"> Socket </option>
-           <option value="4"> Email SMS Notif Socket </option>
+           <option value="4"> SMS + Socket </option>
+           <option value="5"> Email + Socket </option>
+           <option value="6"> Email SMS Notif Socket </option>
         </select>
         
       </div>

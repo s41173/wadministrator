@@ -21,13 +21,12 @@
 </div>
 <div class="x_content">
 
-<form id="upload_form" data-parsley-validate class="form-horizontal form-label-left" method="POST" action="<?php echo $form_action; ?>" 
-      enctype="multipart/form-data">
+<form id="upload_form" data-parsley-validate class="form-horizontal form-label-left" method="POST" action="<?php echo $form_action; ?>" enctype="multipart/form-data">
      
     <div class="form-group">
       <label for="middle-name" class="control-label col-md-3 col-sm-3 col-xs-12"> Name </label>
       <div class="col-md-6 col-sm-6 col-xs-12">
-        <input id="tname" class="form-control col-md-7 col-xs-12" type="text" name="tname" required placeholder="Name">
+        <textarea id="tname" name="tname" class="form-control" required placeholder="Name Desription"></textarea>
       </div>
     </div>
 

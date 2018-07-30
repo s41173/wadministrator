@@ -179,8 +179,7 @@ class Custom_Model extends CI_Model {
         $this->db->where_not_in('id', $id);
         $query = $this->db->get($this->tableName)->num_rows();
 
-        if($query > 0){ return FALSE; }
-        else{ return TRUE;}
+        if($query > 0){ return FALSE; }else{ return TRUE;}
     }  
     
     function update($uid, $users)

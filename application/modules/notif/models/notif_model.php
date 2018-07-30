@@ -26,6 +26,19 @@ class Notif_model extends Custom_Model
         return $this->db->get(); 
     }
     
+    function get_publish($cust,$limit=30)
+    {
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('customer', $cust);
+        $this->db->where('publish', 1);
+        $this->db->where('type', 3);
+        $this->db->order_by('id', 'desc'); 
+        $this->db->limit($limit);
+        return $this->db->get(); 
+    }
+    
     function search($customer=null,$type=null,$modul=null,$publish=null)
     {   
         $this->db->select($this->field);
@@ -48,6 +61,18 @@ class Notif_model extends Custom_Model
         $this->cek_null($type, 'type');
         $this->db->order_by('created', 'asc'); 
         return $this->db->get(); 
+    }
+    
+    function update_notif($cust,$users)
+    {
+        $this->db->where('customer', $cust);
+        $this->db->update($this->tableName, $users);
+    }
+    
+    function update_notif_id($uid,$users)
+    {
+        $this->db->where('id', $uid);
+        $this->db->update($this->tableName, $users);
     }
 
 }

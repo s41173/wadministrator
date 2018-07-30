@@ -28,14 +28,16 @@ class Sales extends MX_Controller
         $this->discount = new Discount_lib();
         $this->notif = new Notif_lib();
         $this->api_lib = new Api_lib();
+        $this->cart = new Cart_lib();
+        $this->courrier = new Courier_lib();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
     }
 
-    private $properti, $modul, $title, $sales, $wt ,$shipping, $bank, $pmodel, $shiprate, $material, $discount;
-    private $role, $currency, $customer, $payment, $city, $product ,$category,$agent,$sales_payment, $notif, $api_lib;
+    private $properti, $modul, $title, $sales, $wt ,$shipping, $bank, $pmodel, $shiprate, $cart, $discount;
+    private $role, $currency, $customer, $payment, $city, $product ,$category,$agent, $notif, $api_lib, $courrier;
     
     function index()
     {
@@ -45,8 +47,59 @@ class Sales extends MX_Controller
        $this->get_last(); 
     }
         
-    // function untuk memeriksa input user dari form sebagai admin
+    function cek_ongoing(){
+        
+        $status = false;
+        $sales = $this->Sales_model->get_ongoing();
+        if($sales){ 
+            
+            $shipping = $this->shipping->get_detail_based_sales($sales->id);
+            $output[] = array ("id" => $sales->id, "code" => $sales->code, "dates" => tglincomplete($sales->dates).' '. timein($sales->dates),
+                               "cust_id" => $sales->cust_id, 'customer' => $this->customer->get_name($sales->cust_id), 'customer_phone' => $this->customer->get_detail($sales->cust_id,'phone1'), "total" => intval($sales->amount+$sales->shipping), "amount" => $sales->amount, "shipping" => $sales->shipping,
+                               "payment_type" => $sales->payment_type, "coordinate" => $shipping->coordinate, "destination" => $shipping->destination, "distance" => $shipping->distance);
+            $status = true;             
+        } 
+        $response = array('content' => $output, 'status' => $status);
+            
+        $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit;  
+    }
+        
+    // fungsi untuk melakukan booking dari driver
+    function book_order($sid,$courier=0,$type=1){
+        
+        $lng = array('booked' => $type, 'booked_by' => $courier); 
+        $this->Sales_model->update($sid,$lng);
+        $error= "Booked Process..!";
+        $response = array('error' => $error, 'status' => true);
+        
+        $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit;  
+    }
     
+    function cek_booked_status($sid){
+        $status = false; $error = null;
+        $sales = $this->Sales_model->get_by_id($sid)->row();
+        if ($sales->booked == 1){ $error= "Order Booked..!"; }else{ $status = true; }
+        $response = array('error' => $error, 'status' => $status);
+        
+        $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit;  
+    }
+    
+    // function untuk memeriksa input user dari form sebagai admin
     function add_order()
     {
         $datax = (array)json_decode(file_get_contents('php://input')); 
@@ -63,6 +116,8 @@ class Sales extends MX_Controller
                 $error = 'Anda masih memiliki order aktif.';
             }elseif ($this->valid_balance($cust, $amount, $payment) == FALSE){
                 $error = 'Saldo Anda Tidak Mencukupi';
+            }elseif ($this->limit_balance($amount, $payment) == FALSE){
+                $error = 'Over Limit Order Pembayaran Tunai';
             }
             else{
                 
@@ -91,6 +146,65 @@ class Sales extends MX_Controller
         
       if (isset($param->qty) && isset($param->tax) && isset($param->price) && isset($param->attribute) && isset($param->description))
       { return TRUE; }else{ return FALSE; }
+    }
+    
+    function add_item_mobile_json()
+    {  
+        $datax = (array)json_decode(file_get_contents('php://input'));         
+ 
+        $orderid = $datax['status']->orderid;
+        $result = true;
+        $error = null;
+        
+        if ($this->cek_orderid($orderid) == TRUE && $this->valid_confirm($orderid,'code') == TRUE)
+        {  
+          $sales = $this->Sales_model->get_sales_based_order($orderid)->row();
+          
+          // cart get
+          $nilai = null;
+          $url = site_url('cart/get/'.$sales->cust_id);
+
+          $responsecart = $this->api_lib->request($url, $nilai);
+          $content = (array) json_decode($responsecart, true);
+          $content = $content['content'];
+          
+          for($i=0; $i<count($content); $i++){
+                  
+            $qty   = intval($content[$i]['qty']);
+            $price = floatval($content[$i]['price']);
+            $amt_price = floatval($qty*$price);
+            $percenttax = floatval($content[$i]['tax']);
+            $tax = floatval($percenttax*$amt_price);
+
+            $salestrans = array('product_id' => $content[$i]['product_id'], 'sales_id' => $sales->id,
+                           'qty' => $qty, 'tax' => $tax, 'attribute' => $content[$i]['attribute'], 'description' => $content[$i]['description'],
+                           'price' => $price, 'amount' => floatval($amt_price));
+
+            $this->sitem->add($salestrans);
+          }
+          
+          $this->cart->delete_by_customer($sales->cust_id); // hapus cart
+          
+          // add shipping
+          if ($result == true){ 
+               $this->shipping_json($datax);
+              // set discount
+              $this->set_discount($orderid);
+              $this->update_trans($this->Sales_model->get_id_based_order($orderid));
+          }
+          
+        }
+        else{ $result = false; $error = 'Invalid Orderid'; }
+        
+        $status = array('result' => $result, 'error' => $error);
+        $response['status'] = $status;
+            
+        $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit;  
     }
     
     function add_item_json()
@@ -187,7 +301,7 @@ class Sales extends MX_Controller
                            'courier' => $shipping->courier, 'destination' => $shipping->destination,
                            'distance' => $shipping->distance,
                            'coordinate' => $shipping->coordinate, 
-                           'amount' => $shipping->amount);
+                           'amount' => $shipping->amount, 'created' => date('Y-m-d H:i:s'));
             
             $this->shipping->create($sid, $param);
             $this->update_trans($sid);
@@ -240,41 +354,40 @@ class Sales extends MX_Controller
         exit;
     }
     
-    function get_sales_transaction_json(){
+    // sales transaction details
+    function get_sales_transaction_json($orderid){
         
-        $datax = (array)json_decode(file_get_contents('php://input')); 
-        
-        $res = $this->Sales_model->get_sales_based_order($datax['orderid'])->row();
+        $res = $this->Sales_model->get_sales_based_order($orderid)->row();
+        $salesid = $res->id;
         
         $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates,
-                           "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, "total" => $res->total,
-                           "shipping" => $res->shipping, "discount" => $res->discount, "approved" => $res->approved );
+                           "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
+                           "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
+                           "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled);
         
         $response['content'] = $output;
         
         // get transaction item
-        $trans = $this->sitem->get_last_item($res->id)->result();
+        $trans = $this->sitem->get_last_item($salesid)->result();
         
         foreach ($trans as $res) {
           
-          $attr = explode('|', $res->attribute);
           $product = $this->product->get_detail_based_id($res->product_id);
           $output1[] = array ("id" => $res->id, "sales_id" => $res->sales_id, "product" => $product->name, "product_id" => $res->product_id, "qty" => $res->qty,
                              "tax" => $res->tax, 'amount' => $res->amount, "price" => $res->price, "attribute" => $res->attribute, 
-                             "image" => base_url().'images/product/'.$product->image, "model" => $this->pmodel->get_name($product->model),
-                             "color" => $this->color->get_name($attr[4]), "description" => $res->description );  
+                             "image" => base_url().'images/product/'.$product->image,
+                             "description" => $res->description );  
         }
         
         $response['transaction'] = $output1;
         
         // get shipping transaction
-        $shipping = $this->shipping->get_detail_based_sales($res->id);
+        $shipping = $this->shipping->get_detail_based_sales($salesid);
         
-        $output2[] = array ("id" => $shipping->id, "sales_id" => $shipping->sales_id, "shipdate" => $shipping->shipdate, "courier" => $shipping->courier,
-                           "awb" => $shipping->awb, 'origin' => $shipping->origin, 'origin_id' => $shipping->origin_id, 'origin_desc' => $shipping->origin_desc,
-                           "dest_id" => $shipping->dest, "dest" => $this->shiprate->get_city_name($shipping->dest), "district" => $shipping->district, "dest_desc" => $shipping->dest_desc, 
-                           "package" => $shipping->package,
-                           "rate" => $shipping->rate, "weight" => $shipping->weight, "amount" => $shipping->amount, "status" => $shipping->status );
+        $output2[] = array ("id" => $shipping->id, "sales_id" => $shipping->sales_id, "dates" => $shipping->dates, "courierid" => $shipping->courier,
+                           "courier" => $this->courrier->get_detail($shipping->courier, 'name'), "coordinate" => $shipping->coordinate, "destination" => $shipping->destination, "distance" => $shipping->distance, 
+                           "received" => $shipping->received, "confirm_customer" => $shipping->confirm_customer, "rating" => $shipping->rating,
+                           "amount" => $shipping->amount, "status" => $shipping->status );
         
         $response['shipping'] = $output2;
         
@@ -287,46 +400,25 @@ class Sales extends MX_Controller
         
     }
     
-    function get_shipping_details_json(){
-        
-        $datax = (array)json_decode(file_get_contents('php://input')); 
-        
-        $uid = $this->Sales_model->get_id_based_order($datax['orderid']);
-        $res = $this->shipping->get_detail_based_sales($uid);
-        
-        $output[] = array ("id" => $res->id, "sales_id" => $res->sales_id, "shipdate" => $res->shipdate, "courier" => $res->courier,
-                           "awb" => $res->awb, 'origin' => $res->origin, 'origin_id' => $res->origin_id, 'origin_desc' => $res->origin_desc,
-                           "dest_id" => $res->dest, "dest" => $this->shiprate->get_city_name($res->dest), "district" => $res->district, "dest_desc" => $res->dest_desc, "package" => $res->package,
-                           "rate" => $res->rate, "weight" => $res->weight, "amount" => $res->amount, "status" => $res->status );
-        
-        $response['content'] = $output;
-        
-        $this->output
-        ->set_status_header(201)
-        ->set_content_type('application/json', 'utf-8')
-        ->set_output(json_encode($response, 128))
-        ->_display();
-        exit;
-        
-    }
-    
-   //    fungsi untuk mendapatkan sales list berdasarkan agent dan status approved
-    
+   //    fungsi untuk mendapatkan sales list berdasarkan customer dan status approved / unapproved
     function get_sales_by_customer_json(){
         
-        $datax = (array)json_decode(file_get_contents('php://input')); 
+        $datax = (array)json_decode(file_get_contents('php://input'));
         
         $output = null;
-        $result = $this->Sales_model->search_json($datax['agent_id'],$datax['confirm'],$datax['limit'])->result();
+        $result = $this->Sales_model->search_json($datax['customer'],$datax['status'],$datax['limit'], $datax['start'])->result();
+        $num = $this->Sales_model->search_json($datax['customer'],$datax['status'],$datax['limit'], $datax['start'])->num_rows();
         
         foreach ($result as $res){
             
-            $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates, "agent_id" => $res->agent_id,
-                               "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, "total" => $res->total,
-                               "shipping" => $res->shipping, "discount" => $res->discount, "approved" => $res->approved );
+            $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => tglincomplete($res->dates).' '. timein($res->dates),
+                               "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
+                               "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
+                               "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled);
         }
-                
-        $response['content'] = $output;
+        
+        if ($num > 0){ $response['content'] = $output; }else{ $response['content'] = 'reachedMax'; }
+        
         
         $this->output
         ->set_status_header(201)
@@ -334,41 +426,22 @@ class Sales extends MX_Controller
         ->set_output(json_encode($response, 128))
         ->_display();
         exit;
-        
     }
     
-    //    fungsi untuk mendapatkan sales list berdasarkan agent dan sudah lunas atau belum
-    function get_sales_status_by_customer_json(){
+   // get canceled transaction 
+    function get_canceled_by_customer_json(){
         
-        $datax = (array)json_decode(file_get_contents('php://input')); 
+        $datax = (array)json_decode(file_get_contents('php://input'));
         
         $output = null;
-        $result = $this->Sales_model->search_json($datax['agent_id'],1, $datax['limit'])->result();
+        $result = $this->Sales_model->search_canceled_json($datax['customer'],$datax['limit'])->result();
         
         foreach ($result as $res){
             
-           $total = intval($res->amount);  
-           $payment = $this->sales_payment->total($res->id);
-           
-           if ($datax['status'] == 'C'){
-               
-               if (floatval($total+$res->shipping-$payment) > 0){ 
-                   
-                $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates, "agent_id" => $res->agent_id,
-                "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, "total" => $res->total,
-                "shipping" => $res->shipping, "discount" => $res->discount, "approved" => $res->approved, "payment_total" => $payment );
-                   
-               }
-           }else{
-               
-               if (floatval($total+$res->shipping-$payment) <= 0){  
-                   
-                $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates, "agent_id" => $res->agent_id,
-                "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, "total" => $res->total,
-                "shipping" => $res->shipping, "discount" => $res->discount, "approved" => $res->approved, "payment_total" => $payment );
-               }
-               
-           }
+            $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates,
+                               "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
+                               "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
+                               "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled);
         }
                 
         $response['content'] = $output;
@@ -437,10 +510,10 @@ class Sales extends MX_Controller
         
          if ($val->approved == 0){
            
-           if($this->cek_shipping($val->id) == TRUE ){ $error = 'Shipping Transaction Posted..!'; }
+           if($this->cek_shipping($val->id) == TRUE ){ $error = 'Order Sedang Dalam Proses Pengiriman..!'; }
            else{              
              if ($val->canceled != null){ $lng = array('canceled' => null); $error = 'Sales Order Uncanceled..!';      
-             }else{ $lng = array('canceled' => date('Y-m-d H:i:s')); $error = 'Sales Order Canceled..!';  } 
+             }else{ $lng = array('canceled' => date('Y-m-d H:i:s'), 'canceled_desc' => $datax['desc'], 'book' => 0, 'booked_by' => 0); $error = 'Sales Order '.$datax['orderid'].' Canceled..!';  } 
 
              $this->update_ledger($val->id);
              $this->Sales_model->update($val->id,$lng); 
@@ -457,8 +530,7 @@ class Sales extends MX_Controller
         ->_display();
         exit;
     }
-    
-//     ============== ajax ===========================
+//  ============== ajax ===========================
     
     
     function get_customer($id)
@@ -635,15 +707,19 @@ class Sales extends MX_Controller
     {   
        $sales = $this->Sales_model->get_by_id($sid)->row();
        $html = $this->invoice($sid, 'email');
-       return $this->notif->create($sales->cust_id, $html, 0, $this->title, 'Wamenak E-Receipt - '.strtoupper($sales->code));
+       $this->notif->create($sales->cust_id, 'Wamenak E-Receipt - '.strtoupper($sales->code), 3, $this->title, 'Wamenak E-Receipt - '.strtoupper($sales->code));
+       return $this->notif->create($sales->cust_id, $html, 0, $this->title, 'Wamenak E-Receipt - '.strtoupper($sales->code), 0);
     }
     
     private function update_ledger($sid,$type='add'){
         $ledger = new Wallet_ledger_lib();
         $sales = $this->Sales_model->get_by_id($sid)->row();
-        if ($type == 'add'){
-            if ($sales->payment_type == 'WALLET'){ $ledger->add('SO', $sid, $sales->dates, 0, intval($sales->amount+$sales->shipping), $sales->cust_id); }
-        }else{ $ledger->remove($sales->dates, 'SO', $sid); }
+        
+        if ($sales->payment_type == 'WALLET'){ 
+            if ($type == 'add'){
+              $ledger->add('SO', $sid, $sales->dates, 0, intval($sales->amount+$sales->shipping), $sales->cust_id);     
+            }else{  $ledger->remove($sales->dates, 'SO', $sid); }
+        }
     }
             
     function redeem($uid = null)
@@ -1091,6 +1167,13 @@ class Sales extends MX_Controller
             $response = $this->api_lib->request($url, $nilai);
             $datax = (array) json_decode($response, true);
             if ($amt <= intval($datax['balance'])){ return TRUE; }else{ return FALSE; }
+        } 
+    }
+    
+    function limit_balance($amt=0,$type='CASH'){
+        
+        if ($type == 'WALLET'){ return TRUE; }else{
+            if (intval($amt) > 50000){ return FALSE; }else{ return TRUE; }
         } 
     }
     
