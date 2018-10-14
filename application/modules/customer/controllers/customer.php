@@ -187,6 +187,31 @@ class Customer extends MX_Controller
             exit; 
     }
     
+    // get detail by phone
+    function detail_by_phone($phone){
+        
+        $status = true;
+        $error = null;
+        $output = null;
+        
+        if ( isset($phone) ){
+            
+        $res = $this->Customer_model->get_by_phone($phone)->row();
+        if ($res){
+            $output = array ("id" => $res->id, "first_name" => strtoupper($res->first_name), "last_name" => $res->last_name,
+                         "type" => $res->type, "email" => $res->email, "address" => $res->address, "phone" => $res->phone1);
+        }
+                       
+        }else{ $status = false; $error = "Wrong format..!!"; }
+
+            $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($output,128))
+            ->_display();
+            exit; 
+    }
+    
     function valid_customer(){
         
         $datax = (array)json_decode(file_get_contents('php://input')); 
@@ -274,7 +299,6 @@ class Customer extends MX_Controller
             $trans = $this->ledger->get_sum_transaction_monthly($datas['customer'],$this->period->month, $this->period->year);
             $trans = floatval($trans['vamount']);
             $balance = $beginning+$trans;
-            $balance = $trans;
             
         }else{ $status = false; $error = "Wrong format..!!"; }
         

@@ -36,7 +36,7 @@ class Sales extends MX_Controller
         header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
     }
 
-    private $properti, $modul, $title, $sales, $wt ,$shipping, $bank, $pmodel, $shiprate, $cart, $discount;
+    private $properti, $modul, $title, $sales ,$shipping, $bank, $shiprate, $cart, $discount;
     private $role, $currency, $customer, $payment, $city, $product ,$category,$agent, $notif, $api_lib, $courrier;
     
     function index()
@@ -74,6 +74,10 @@ class Sales extends MX_Controller
         
         $lng = array('booked' => $type, 'booked_by' => $courier); 
         $this->Sales_model->update($sid,$lng);
+        
+        $shp = array('courier' => $courier);  // update courier di shipping
+        $this->shipping->edit($sid, $shp);
+        
         $error= "Booked Process..!";
         $response = array('error' => $error, 'status' => true);
         
@@ -85,12 +89,39 @@ class Sales extends MX_Controller
             exit;  
     }
     
-    function cek_booked_status($sid){
+    // fungsi untuk mencek sales sudah terbook atau tidak
+    function cek_sales_booked($sid,$courier){
+        
         $status = false; $error = null;
         $sales = $this->Sales_model->get_by_id($sid)->row();
-        if ($sales->booked == 1){ $error= "Order Booked..!"; }else{ $status = true; }
-        $response = array('error' => $error, 'status' => $status);
         
+        if ($sales){
+          if ($sales->booked == 1 && $sales->booked_by == $courier && $sales->canceled == NULL && $sales->approved == 0)
+          { $status = true; $error= "Order Available..!"; }
+        }else{ $error = false; }
+        
+        $response = array('error' => $error, 'status' => $status);
+        $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit;  
+        
+    }
+    
+    function cek_booked_status($sid){
+        
+        $status = false; $error = null;
+        $sales = $this->Sales_model->get_by_id($sid)->row();
+        
+        if ($sales){
+          if ($sales->booked == 1){ $error= "Order Booked..!"; }
+          if ($sales->canceled != NULL){ $error= "Order Canceled..!"; }
+          else{ $status = true; }    
+        }else{ $error = false; }
+        
+        $response = array('error' => $error, 'status' => $status);
         $this->output
             ->set_status_header(200)
             ->set_content_type('application/json', 'utf-8')
@@ -191,6 +222,7 @@ class Sales extends MX_Controller
               // set discount
               $this->set_discount($orderid);
               $this->update_trans($this->Sales_model->get_id_based_order($orderid));
+              $this->courrier->push_courier('New Order Detected');
           }
           
         }
@@ -316,30 +348,43 @@ class Sales extends MX_Controller
         
         $uid = $this->Sales_model->get_id_based_order($datax['orderid']);
         $val = $this->Sales_model->get_by_id($uid)->row();
+        $error = null;
+        $result = false;
         
         if ($val->approved == 0){
            
-           if ($val->amount > 0 && $val->shipping > 0){ 
-               $lng = array('approved' => 1); $this->Sales_model->update($uid,$lng); 
-               
-               if ( $this->pdf($uid) == TRUE ){ $result = true; $error = 'Sales Order : '.$datax['orderid'].' posted'; }
-               else{ $result = false; $error = 'error|Sending Error..!'; }
+           if ($val->amount <= 0){
+               $lng = array('approved' => 0); $error = 'Error Validation Amount..!';
            }
-           else { $result = false; $error = 'Invalid Amount..!'; }
-        }    
-        else { $result = false; $error = 'Sales Already Confirmed..!'; }
+           elseif($this->cek_shipping($uid) == FALSE ){ $lng = array('approved' => 0); $error = 'Shipping Transaction Not Posted..!'; }
+           elseif($this->valid_balance($val->cust_id,intval($val->amount+$val->shipping),$val->payment_type) == FALSE ){ $lng = array('approved' => 0); $error = 'Invalid Balance For Wallet Transaction..!'; }
+           else{
+                $lng = array('approved' => 1);    
+                  if ( $this->send_confirmation_email($uid) == true ){
+
+                  $result = true; $error = 'Sales Order : '.$datax['orderid'].' posted'; 
+                  $this->update_ledger($uid); // update balance sich customer dan driver
+                  $this->Sales_model->update($uid,$lng); 
+                  
+                  $shp = array('received' => date('Y-m-d H:i:s'));  // update courier di shipping
+                  $this->shipping->edit($uid, $shp);
+
+                }else{ $error = 'Sending Error..!'; }
+           }
+       }    
+       else { $error = 'Sales Order Posted..!'; }
        
-        $status = array('result' => $result, 'error' => $error);
-        $response['status'] = $status;
+        $status = array('status' => $result, 'error' => $error);
             
         $this->output
             ->set_status_header(200)
             ->set_content_type('application/json', 'utf-8')
-            ->set_output(json_encode($response,128))
+            ->set_output(json_encode($status,128))
             ->_display();
             exit;  
     }
     
+     // cek order id valid tidak
     function cek_orderid_json(){
         
         $datax = (array)json_decode(file_get_contents('php://input')); 
@@ -354,13 +399,33 @@ class Sales extends MX_Controller
         exit;
     }
     
+    function cek_id_json($uid){
+        
+        if ($this->Sales_model->valid_id($uid) == FALSE){ $status = false; }else{ $status = true; }
+        
+        $response = array('status' => $status);
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;
+    }
+    
     // sales transaction details
-    function get_sales_transaction_json($orderid){
+    function get_sales_transaction_json($orderid,$type=null){
         
-        $res = $this->Sales_model->get_sales_based_order($orderid)->row();
-        $salesid = $res->id;
+        if ($type != null){
+           $res = $this->Sales_model->get_by_id($orderid)->row();
+           $orderid = $res->code;
+           $salesid = $res->id;
+        }
+        else{
+           $res = $this->Sales_model->get_sales_based_order($orderid)->row();
+           $salesid = $res->id;
+        }
         
-        $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => $res->dates,
+        $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => tglin($res->dates).' &nbsp; '. timein($res->dates),
                            "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
                            "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
                            "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled);
@@ -415,6 +480,38 @@ class Sales extends MX_Controller
                                "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
                                "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
                                "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled);
+        }
+        
+        if ($num > 0){ $response['content'] = $output; }else{ $response['content'] = 'reachedMax'; }
+        
+        
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;
+    }
+   
+    //    fungsi untuk mendapatkan sales list berdasarkan courier dan status approved
+    function get_sales_by_courier_json(){
+        
+        $datax = (array)json_decode(file_get_contents('php://input'));
+        
+        $output = null;
+        $result = $this->Sales_model->search_courier_json($datax['courier'],$datax['limit'], $datax['start'])->result();
+        $num = $this->Sales_model->search_courier_json($datax['courier'],$datax['limit'], $datax['start'])->num_rows();
+        
+        foreach ($result as $res){
+            
+            $shipping = $this->shipping->get_detail_based_sales($res->id);
+            
+            $output[] = array ("id" => $res->id, "code" => $res->code, "dates" => tglincomplete($res->dates).' '. timein($res->dates),
+                               "cust_id" => $res->cust_id, 'customer' => $this->customer->get_name($res->cust_id), "amount" => $res->amount, "tax" => $res->tax, "cost" => $res->cost, 
+                               "discount" => $res->discount, "total" => $res->total, "shipping" => $res->shipping,
+                               "payment_type" => $res->payment_type, "discount" => $res->discount, "approved" => $res->approved, "canceled" => $res->canceled,
+                               "destination" => $shipping->destination
+                              );
         }
         
         if ($num > 0){ $response['content'] = $output; }else{ $response['content'] = 'reachedMax'; }
@@ -513,7 +610,7 @@ class Sales extends MX_Controller
            if($this->cek_shipping($val->id) == TRUE ){ $error = 'Order Sedang Dalam Proses Pengiriman..!'; }
            else{              
              if ($val->canceled != null){ $lng = array('canceled' => null); $error = 'Sales Order Uncanceled..!';      
-             }else{ $lng = array('canceled' => date('Y-m-d H:i:s'), 'canceled_desc' => $datax['desc'], 'book' => 0, 'booked_by' => 0); $error = 'Sales Order '.$datax['orderid'].' Canceled..!';  } 
+             }else{ $lng = array('canceled' => date('Y-m-d H:i:s'), 'canceled_desc' => $datax['desc'], 'booked' => 0, 'booked_by' => 0); $error = 'Sales Order '.$datax['orderid'].' Canceled..!';  } 
 
              $this->update_ledger($val->id);
              $this->Sales_model->update($val->id,$lng); 
@@ -693,6 +790,9 @@ class Sales extends MX_Controller
               $this->update_ledger($uid); // update balance sich customer
               $this->Sales_model->update($uid,$lng); 
               
+              $shp = array('received' => date('Y-m-d H:i:s'));  // update courier di shipping
+              $this->shipping->edit($uid, $shp);
+              
             }
               else{ $mess = 'error|Sending Error..!'; }
            }
@@ -713,12 +813,17 @@ class Sales extends MX_Controller
     
     private function update_ledger($sid,$type='add'){
         $ledger = new Wallet_ledger_lib();
+        $cledger = new Courier_wallet_ledger_lib();
         $sales = $this->Sales_model->get_by_id($sid)->row();
         
         if ($sales->payment_type == 'WALLET'){ 
             if ($type == 'add'){
               $ledger->add('SO', $sid, $sales->dates, 0, intval($sales->amount+$sales->shipping), $sales->cust_id);     
             }else{  $ledger->remove($sales->dates, 'SO', $sid); }
+        }elseif ($sales->payment_type == 'CASH'){
+            if ($type == 'add'){
+              $cledger->add('SO', $sid, $sales->dates, intval($sales->amount+$sales->shipping), 0, $sales->booked_by);     
+            }else{  $cledger->remove($sales->dates, 'SO', $sid); $cledger->remove_redeem('RSO', $sid); }
         }
     }
             
@@ -727,9 +832,19 @@ class Sales extends MX_Controller
        if ($this->acl->otentikasi2($this->title,'ajax') == TRUE){ 
           
         $val = $this->Sales_model->get_by_id($uid)->row();   
+        $cledger = new Courier_wallet_ledger_lib();
+        
         if ($val->approved == 1){
             
-            if ($val->redeem == 0){ $lng = array('redeem' => 1, 'redeem_date' => date('Y-m-d H:i:s')); $this->Sales_model->update($uid,$lng); echo 'true|Status Changed...!'; }
+            if ($val->redeem == 0){ 
+                $lng = array('redeem' => 1, 'redeem_date' => date('Y-m-d H:i:s'));
+                $this->Sales_model->update($uid,$lng); echo 'true|Status Changed...!'; 
+                
+                if ($val->payment_type == 'CASH'){ 
+                    $cledger->add('RSO', $uid, date('Y-m-d H:i:s'), 0, intval($val->amount+$val->shipping), $val->booked_by);
+                }
+                
+            }
             else{ echo 'warning|Transaction Already Posted...!'; }
         }else{ echo 'warning|Transaction Not Posted...!'; }
              

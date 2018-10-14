@@ -55,6 +55,19 @@ class Topup_model extends Custom_Model
         return $this->db->get(); 
     }
     
+    function get_by_courier($courier,$limit=0,$offset=0){
+        
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('courier', $courier);
+        $this->db->where('status', 1);
+        $this->db->where('type', 1);
+        $this->db->limit($limit, $offset);
+        $this->db->order_by('id', 'desc'); 
+        return $this->db->get(); 
+    }
+    
     function report($start=null,$end=null,$type=null)
     {   
         $this->db->select($this->field);
@@ -64,6 +77,13 @@ class Topup_model extends Custom_Model
         $this->cek_null($type, 'type');
         $this->db->order_by('id', 'asc'); 
         return $this->db->get(); 
+    }
+    
+    function counter()
+    {
+       $this->db->select_max('id');
+       $query = $this->db->get($this->tableName)->row_array(); 
+       return intval($query['id']);
     }
 
 }

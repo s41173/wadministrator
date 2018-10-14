@@ -18,6 +18,7 @@ class Topup extends MX_Controller
         $this->courier = new Courier_lib();
         $this->bank = new Bank_lib();
         $this->ledger = new Wallet_ledger_lib();
+        $this->cledger = new Courier_wallet_ledger_lib();
         $this->notif = new Notif_lib();
         
         header('Access-Control-Allow-Origin: *');
@@ -27,7 +28,7 @@ class Topup extends MX_Controller
     }
 
     private $properti, $modul, $title;
-    private $role,$customer,$courier,$bank,$ledger,$notif;
+    private $role,$customer,$courier,$bank,$ledger,$cledger,$notif;
 
     function index()
     {
@@ -38,9 +39,8 @@ class Topup extends MX_Controller
     function add_json(){
         
         $datas = (array)json_decode(file_get_contents('php://input'));
-        
-        $status = true;
-        $error = null;
+        $status = true; $error = null;
+        $uid = 0;
         
         if ($datas['type'] == '1'){
             $topup = array('customer' => $datas['customer'], 
@@ -59,14 +59,12 @@ class Topup extends MX_Controller
         }
 
         $this->Topup_model->add($topup);
+        $uid = $this->Topup_model->counter();
         if ($datas['type'] == '0'){ $error = "Topup berhasil : ".date('d-m-Y H:i:s'); }
         if ($datas['type'] == '1'){ $error = "Topup berhasil : ".date('d-m-Y H:i:s'); }
         if ($datas['type'] == '2'){ $error = "Topup berhasil | ".date('d-m-Y H:i:s'); }
-            
-        // kirim konfirmasi ke wamenak sms bahwa customer telah melakukan topup by trf
-        // if ($this->send_confirmation_email($val->id) == https://web.facebook.com/?ref=tn_tnmnTRUE){ $status = true; $error = "Password has been sent to your email."; }else{ $status = false; $error = 'Email Not Sent..!'; }
         
-        $response = array('status' => $status, 'error' => $error); 
+        $response = array('status' => $status, 'error' => $error, 'id' => $uid); 
         $this->output
         ->set_status_header(201)
         ->set_content_type('application/json', 'utf-8')
@@ -78,15 +76,26 @@ class Topup extends MX_Controller
     function confirmation_driver(){
         
         $datas = (array)json_decode(file_get_contents('php://input'));
+        $errorlib = new Error_lib();
         
-        $status = true;
+        $status = false;
         $error = null;
         
-        $topup = array('status' => 1);
-        $this->Topup_model->update($datas['id'], $topup);
-        $error = "Konfirmasi topup berhasil..";
+        $val = $this->Topup_model->get_by_id($datas['id'])->row();
+        
+        try { 
+            $lng = array('status' => 1); $this->Topup_model->update($datas['id'], $lng);
+            $this->ledger->add('TOP', $datas['id'], $val->dates, $val->amount, 0, $val->customer); // add ledger customer
+            $this->cledger->add('TOP', $datas['id'], $val->dates, $val->amount, 0, $val->courier); // add ledger driver
             
-        // if ($this->send_confirmation_email($val->id) == https://web.facebook.com/?ref=tn_tnmnTRUE){ $status = true; $error = "Password has been sent to your email."; }else{ $status = false; $error = 'Email Not Sent..!'; }
+            $sms = $this->properti['name']." : Topup berhasil senilai ".idr_format($val->amount)." pada tanggal ".tglin($val->dates).' '.timein($val->dates).". No transaksi : TOP-0".$val->id;
+            $html = $this->invoice($datas['id']);
+            $notifemail = $this->notif->create($val->customer, $html, 0, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id),0);
+            $notifsms = $this->notif->create($val->customer, $sms, 1, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id),0);
+            $notifpush = $this->notif->create($val->customer, $sms, 3, $this->title, 'Wamenak Topup-Receipt - '.strtoupper('TOP-0'.$val->id));
+            
+            if ($notifemail == true && $notifsms == true && $notifpush == true){ $status = true; $error = "Topup Confirmation Success...!"; }else{ $status = true; $error = "Notifications failed to send"; }
+        } catch (Exception $e) { $errorlib->create($this->title, $e->getMessage()); $error = 'Error on confirmation..!'; }
         
         $response = array('status' => $status, 'error' => $error); 
         $this->output
@@ -125,6 +134,30 @@ class Topup extends MX_Controller
             ->_display();
             exit; 
         }
+    }
+    
+    public function get_by_courier($courier,$limit=0,$start=0){
+                
+        $result = $this->Topup_model->get_by_courier($courier,$limit,$start)->result();
+        $num = $this->Topup_model->get_by_courier($courier,$limit,$start)->num_rows();
+        
+        if ($result){
+            foreach($result as $res)
+            { 
+               if ($res->redeem_date == null){ $redem = '-'; }else{ $redem = tglin($res->redeem_date).' '.timein($res->redeem_date); } 
+               $output[] = array ("id" => $res->id, "code" => 'TOP-0'.$res->id, "dates" => tglin($res->dates), "time" => timein($res->dates), "customer" => $this->customer->get_name($res->customer),
+                                  "amount" => idr_format($res->amount), "redeem" => $redem);
+            }
+        }
+        
+        if ($num > 0){ $response['content'] = $output; }else{ $response['content'] = 'reachedMax'; }
+         $this->output
+            ->set_status_header(200)
+            ->set_content_type('application/json', 'utf-8')
+            ->set_output(json_encode($response,128))
+            ->_display();
+            exit; 
+        
     }
     
     
@@ -246,7 +279,7 @@ class Topup extends MX_Controller
            
           try { 
             $lng = array('status' => 1); $this->Topup_model->update($uid,$lng);
-            $this->ledger->add('TOP', $uid, $val->dates, $val->amount, 0, $val->customer);   
+            $this->ledger->add('TOP', $uid, $val->dates, $val->amount, 0, $val->customer);  // tambah saldo cust
             
             $sms = $this->properti['name']." : Topup berhasil senilai ".idr_format($val->amount)." pada tanggal ".tglin($val->dates).' '.timein($val->dates).". No transaksi : TOP-0".$val->id;
             $html = $this->invoice($uid);
@@ -269,8 +302,11 @@ class Topup extends MX_Controller
         $val = $this->Topup_model->get_by_id($uid)->row();   
         if ($val->status == 1){
             
-            if ($val->redeem == 0){ $lng = array('redeem' => 1, 'redeem_date' => date('Y-m-d H:i:s')); $this->Topup_model->update($uid,$lng);
-                                    $this->ledger->add('TOP', $uid, $val->dates, $val->amount, 0, $val->customer); echo 'true|Status Changed...!'; }
+            if ($val->redeem == 0){ 
+                $lng = array('redeem' => 1, 'redeem_date' => date('Y-m-d H:i:s')); $this->Topup_model->update($uid,$lng);
+                $this->cledger->add('RTOP', $uid, date('Y-m-d H:i:s'), 0, $val->amount, $val->courier); // redeem courier
+                echo 'true|Status Changed...!'; 
+            }
             else{ echo 'warning|Transaction Already Posted...!'; }
         }else{ echo 'warning|Transaction Not Posted...!'; }
              
@@ -318,6 +354,9 @@ class Topup extends MX_Controller
             if ($val->status == 1){
                 $lng = array('status' => 0, 'redeem' => 0, 'redeem_date' => null); $this->Topup_model->update($uid,$lng); 
                 $this->ledger->remove($val->dates, 'TOP', $uid);
+                $this->cledger->remove($val->dates, 'TOP', $uid); // remove ledger courier
+                $this->cledger->remove_redeem('RTOP', $uid); // remove reddem ledger courier
+                
                 echo 'true|Transaction Rollbacked...!';
             }
             else{

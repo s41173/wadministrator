@@ -17,14 +17,18 @@ class Courier extends MX_Controller
         $this->courier = new Courier_lib();
         $this->shipping = new Shipping_lib();
         $this->login = new Courier_login_lib();
+        $this->ledger = new Courier_wallet_ledger_lib();
+        $this->balance = new Courier_Balance_lib();
+        $this->period = new Period_lib();
+        $this->period = $this->period->get();
         
         header('Access-Control-Allow-Origin: *');
         header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
         header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token'); 
     }
 
-    private $properti, $modul, $title;
-    private $role, $courier,$shipping,$login;
+    private $properti, $modul, $title, $ledger;
+    private $role, $courier,$shipping,$login,$balance,$period;
 
     function index(){
       $this->get_last();   
@@ -116,7 +120,9 @@ class Courier extends MX_Controller
         echo $this->login->get_coordinate($userid);
     }
     
+    // fungsi untuk mendapatkan semua lokasi user yang tidak terkait booking
     function get_loc_all(){
+        $output = null;
         $result = $this->login->get_coordinate_all()->result();
         foreach($result as $res){   
             
@@ -129,6 +135,36 @@ class Courier extends MX_Controller
     }
     
     // ======= ajax =======================
+    
+        // get current balance
+    function balance(){
+       
+        $datas = (array)json_decode(file_get_contents('php://input'));
+        
+        $status = true;
+        $error = null;
+        $balance = 0;
+        
+        if (isset($datas['courier'])){
+            
+            // balance
+            $balance = $this->balance->get($datas['courier'], $this->period->month, $this->period->year);
+            $beginning = @floatval($balance->beginning);
+            $trans = $this->ledger->get_sum_transaction_monthly($datas['courier'],$this->period->month, $this->period->year);
+            $trans = floatval($trans['vamount']);
+            $balance = $beginning+$trans;
+            
+        }else{ $status = false; $error = "Wrong format..!!"; }
+        
+        $response = array('balance' => $balance, 'status' => $status, 'error' => $error); 
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response))
+        ->_display();
+        exit;
+    }
+    
     
     function otentikasi(){
        
@@ -168,6 +204,27 @@ class Courier extends MX_Controller
         exit;
         
     }
+    
+    function details($uid){
+        
+        $output = null;
+        $res = $this->Courier_model->get_by_id($uid)->row();
+        
+        $output[] = array ("id" => $res->id, "ic" => $res->ic, "name" => $res->name, "phone" => $res->phone, "address" => $res->address,
+                           "email" => $res->email, 'image' => base_url().'images/courier/'.$res->image, "company" => $res->company,
+                           "joined" => tglin($res->joined), "status" => $res->status);
+        
+        $response['content'] = $output;
+        $this->output
+        ->set_status_header(201)
+        ->set_content_type('application/json', 'utf-8')
+        ->set_output(json_encode($response, 128))
+        ->_display();
+        exit;
+        
+    }
+    
+    // =================== batas API ====================================
      
     public function getdatatable($search=null,$publish='null')
     {
@@ -407,6 +464,7 @@ class Courier extends MX_Controller
             }
 
             $this->Courier_model->add($courier);
+            $this->balance->create($this->Courier_model->counter(1), $this->period->month, $this->period->year);
             $this->session->set_flashdata('message', "One $this->title data successfully saved!");
 //            redirect($this->title);
             

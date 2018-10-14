@@ -47,7 +47,7 @@
       <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
       </button>
       <span style="color:#fff !important;">IP Adress : <strong> <?php echo $this->input->ip_address(); ?> </strong> 
-      - <?php echo $user_agent; ?> | Last Login : <?php echo $this->session->userdata('waktu'); ?> </span> 
+      - <?php echo $user_agent; ?> | Last Login : <?php echo $this->session->userdata('waktu'); ?> | Period : <?php echo $month ?> - <?php echo $year; ?> </span> 
     </div>
     
     

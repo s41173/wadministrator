@@ -75,7 +75,8 @@ class Push_lib extends Main_model {
                 'include_player_ids' => array($device),
                 'data' => array("foo" => "bar"),
                 "icon" => "http://wamenak.com/icon.png", 
-                "url" => "https://wamenak.com",
+//                "url" => "https://wamenak.com",
+                "targetUrl" => "profil.html",
                 'contents' => $content
         );
 
@@ -95,7 +96,8 @@ class Push_lib extends Main_model {
 
 //            return $response;
         $return = json_decode($response,true);
-        if ($return['recipients'] > 0){ return true; }else{ return false; }
+        return true;
+//        if ($return['recipients'] > 0){ return true; }else{ return false; }
     }
     
     function send_multiple_device($device=null,$mess=null){
@@ -107,7 +109,7 @@ class Push_lib extends Main_model {
                 'include_player_ids' => $device,
                 'data' => array("foo" => "bar"),
                 "icon" => "http://wamenak.com/icon.png", 
-                "url" => "https://wamenak.com",
+//                "url" => "https://wamenak.com",
                 'contents' => $content
         );
 

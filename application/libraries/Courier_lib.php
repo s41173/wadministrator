@@ -20,6 +20,15 @@ class Courier_lib extends Main_model {
         if ($val){ return ucfirst($val->$type); }
     }
     
+    function get(){
+        
+        $this->db->select($this->field);
+        $this->db->where('deleted', NULL);
+        $this->db->where('status', 1);
+        $this->db->order_by('id', 'asc');
+        return $this->db->get($this->tableName); 
+    }
+    
     
     function get_type($id=null)
     {
@@ -60,6 +69,27 @@ class Courier_lib extends Main_model {
           foreach($val as $row){ $data['options'][$row->id] = ucfirst($row->name); }    
         }else{ $data['options'][''] = '--'; }
         return $data;
+    }
+    
+    // push notif to all courier free
+    function push_courier($mess=null){
+        
+        $login = new Courier_login_lib();
+        $shipping = new Shipping_lib();
+        $push = new Push_lib();
+        
+        $output = array();
+        $i=0;
+        $result = $login->get_coordinate_all()->result();
+        foreach($result as $res){   
+            
+           if ($shipping->valid_free($res->userid) == TRUE){
+              $output[$i] = $res->device;   
+              $i++;
+           }
+	} 
+        
+        $push->send_multiple_device($output, $mess);  
     }
     
    

@@ -71,6 +71,13 @@ class Courier_model extends Custom_Model
         $this->db->where('deleted', $this->deleted);
         return $this->db->get($this->tableName);
     }
+    
+    function counter($type=0)
+    {
+       $this->db->select_max('id');
+       $query = $this->db->get($this->tableName)->row_array(); 
+       if ($type == 0){ return intval($query['id']+1); }else { return intval($query['id']); }
+    }
 
 }
 

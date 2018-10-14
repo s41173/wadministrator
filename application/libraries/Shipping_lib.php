@@ -56,7 +56,8 @@ class Shipping_lib extends Custom_Model {
        $this->db->insert($this->tableName, $param); 
     }
     
-    private function edit($sid,$param)
+    // fungsi ini di panggil untuk update shipping by sales id
+    function edit($sid,$param)
     {
        $this->db->where('sales_id', $sid);
        $this->db->update($this->tableName, $param); 

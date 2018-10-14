@@ -212,6 +212,7 @@
       <div class="form-group">
         <div class="col-md-9 col-sm-9 col-xs-12 col-md-offset-3">
           <button type="submit" class="btn btn-primary" id="button">Save</button>
+          <a href="<?php echo site_url('closing'); ?>" class="btn btn-danger"> Monthly End </a>
         </div>
       </div>
       

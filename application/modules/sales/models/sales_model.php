@@ -51,6 +51,20 @@ class Sales_model extends Custom_Model
         return $this->db->get(); 
     }
     
+    function search_courier_json($courier=null,$limit=0,$offset=0)
+    {   
+        $this->db->select($this->field);
+        $this->db->from($this->tableName); 
+        $this->db->where('deleted', $this->deleted);
+        $this->db->where('booked_by', $courier);
+        $this->db->where('booked', 1);
+        $this->db->where('approved', 1);
+        $this->db->where('canceled IS NULL');
+        $this->db->limit($limit, $offset);
+        $this->db->order_by('dates', 'desc'); 
+        return $this->db->get(); 
+    }
+    
     function search_canceled_json($customer=null,$limit=0)
     {   
         $this->db->select($this->field);
@@ -93,6 +107,13 @@ class Sales_model extends Custom_Model
     function valid_orderid($orderid)
     {
        $this->db->where('code', $orderid);
+       $query = $this->db->get($this->tableName)->num_rows();
+       if ($query > 0){ return TRUE; }else{ return FALSE; }
+    }
+    
+    function valid_id($uid)
+    {
+       $this->db->where('id', $uid);
        $query = $this->db->get($this->tableName)->num_rows();
        if ($query > 0){ return TRUE; }else{ return FALSE; }
     }
